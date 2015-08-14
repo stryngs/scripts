@@ -1,0 +1,76 @@
+Changes List ~~~~> hydrafy.sh
+#0.1
+- Beta release
+
+#0.3
+- Add version control to router.lst and spread.ods
+- Fixed router.lst to avoid unnecessary spaces which resulted in improper username/pass entry into hydra
+- Documented a bug with the -C flag for hydra, temporary use of -L and -P flags as a result of this bug till hydra is patched
+- Added in some case to replace if statements
+
+#0.5
+- Implemented sort and uniq filters for creation of user.txt and pass.txt.  This significantly lessened the advent of incorrect entries.  This is a temporary fix until a patch for Hydra with the -C flag is released
+
+#0.6
+- The change for 0.5 has now been fixed and we are back to using -C flags.  Included in the repo is a patched up version of hydra.  Read the development notes in the comments of hydra.sh for more information
+
+#1.0
+- Complete makeover of hydra.sh
+- Addition of a parsing function to specify which type of grep the user would like
+- The patched up version of hydra has been removed since there is now a public version of hydra v7.2 available at thc.org/thc-hydra
+
+#1.2
+- Implementation of snakebite mode via oui.lst
+- Added the functionality to switch to previous menus or exit from the script via a command -versus- interrupts
+- Modification of GETOPTS functionality with respect to launching hydrafy.sh
+- Removal of leading and trailing spaces within awk statements
+- More comments were added to the script detailing which functions perform which actions
+
+#1.4
+- Implemented a variable system for easier coding with respect to ANSI output
+- Changed all variables to lowercase except for those which require capitalization
+- Renamed some of the variables within the script
+- Modification of $OPTARG condition
+- Implementation of rtr_check--()
+
+#1.5 (3 October 2012)
+- Porting of HydraFy to N900
+- Added a check function to verify the existence of hydra in the user's path
+	*Temporarily commented out due to issues with osso-xterm (N900)
+- Implemented the capability to attack multiple protocols versus the original http-get functionality that has been present since the beginning
+- Removed snakebite--() as it was a somewhat useless function
+- Removed the word "function" from the functions as it is not needed
+- Added the ability to save the usernames and passwords to different files
+- Pointed the initial grep for rtr_check output to the bit bucket as it cluttered the screen
+- Minor menu wording changes
+- Added a release date for tracking purposes within changes.txt
+- Reverted changes.txt to have the most recent changes on the bottom
+
+#1.6 (17 October 2012)
+- Added sudo to hydrafy.desktop allowing the route command to be called (N900 issue)
+- The check function to verify the existence of hydra in the user's path is now fully vetted and functional.
+
+#1.8 (12 November 2012)
+- Changed input readability with regards to the "read" command
+- Added router OUI checking capabilities {detailed in the Development Notes section}
+- Added the ability to update the OUI list via IEEE
+- Fixed usage--() to direct the user to type ./hydrafy.sh vs ./hydrafy
+
+#1.8.2 (24 November 2012)
+- Stripped N900 stuff from the main SVN repo in order to create a .deb for hydrafy for the N900
+
+#1.8.8 (10 December 2012)
+- Added patch to ping the router, merely joining network does not provide arp cache entry; screwing up the auto-detection OUI feature
+
+#2.0 (13 December 2012)
+- Added the option to designate the target port.
+- Removed N900 specifics, as the N900 version of HydraFy has it's own repo
+
+#2.2 (18 February 2013)
+- Added -n flags to route and arp commands to speed hydrafy way up
+- Fixed some tab issues
+- Added "exit 0" to usage--()
+
+#2.5 (5 April 2013)
+- Converted oui.lst and spread.ods into CSV files
+	- Changed the accompanying language to take CSV into account

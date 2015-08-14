@@ -1,0 +1,163 @@
+Changes List ~~~~> quickset.sh
+#0.3
+- Added a scrollbar for all xterm sessions
+
+#0.3.1
+- Changed the way that SoftAPs and the DHCP server interact with each other.  The user may now launch a SoftAP independent of a DHCP server; however, an autolaunch option is provided in the SoftAP menu that will speed up the process for a quick launch of full routing capabilities.  As well, this change allowed for the user to launch a dhcp server on any NIC they choose.
+- Added the option to tail the DHCP log so that Hostnames of users are shown.
+
+#0.3.3
+- Added in customized DNS entry option for the DHCP Server.  In a later version this option will be entered with new lines, right now it it a one variable method where each IP is split by a space versus by pressing enter...
+
+#0.3.5
+- Added a function that verifies a NIC exists prior to trying to use it.
+- Removed a lot of needless "While Loops"
+
+#0.5
+- Added in a function that allows the user to arpspoof multiple targets in one swoop
+
+#0.7 (22 October 2011)
+- Added an Updating Function for the script
+
+#0.7.1 (1 November 2011)
+- Added in functionality that will kill the Parent "quickset.sh" if update is launched and successful.  Prior to this, if a trap INT was called within the child, the user would be reverted back to the parent once exiting out of the child; this could be very confusing and took away the "beauty" of this script.  It's also something that I have not seen with any script which relaunches itself after updating....
+
+#0.9 (6 November 2011)
+- All varibles that were used for "String" comparasions have been sanitized with double quotations
+- The previous "amplification techniques" function has been removed in favor of:
+  1) My idea on "Amplification" was incorrect.  Thank you for pointing out the defencies ShadowMaster.
+  2) A completly restructured wifi_101--(), which enables the user to perform each step in the WEP crack process one by one; while still retaining the "Automated" features that previous versions contained.
+- Some functions were combined when I realized that they did the same thing in a slightly different manner.
+- An option has been added in both the Authentication function and the Packetforge-NG functions of the script that will allow the user to do SKA injection.
+- Added exit option within init_setup--()
+
+#1.3 (25 November 2011)
+- Fixed the bug for wifi_auth--() pointing to auth--()
+- Fixed a bug with regards to ifconfig -s for dev_check--()
+- Added xterm option for chop & frag
+- Adjusted dhcpd with 1hr lease and 2hr max
+- Added color to main menu to allure to the fact that 2) shouldnt be entered in
+- Added directory location in titlebar for dhcpdtail
+- began debugging with an actual router, fixing massive problems.........
+- removed Wireless Channel Recon option in favor of consolidated wifi options under wifi_101--()
+
+#1.5 (26 November 2011)
+- killall -9 replaced killall for dhcpcd kill called during "Hidden Processes" kill when exiting the script
+- init_setup--() simplified
+- Automated WEP attacks menu removed, read comments for full explanation
+- Seems to be fully debugged for the wifi_101--() portion of quickset.sh
+- Still waiting on a fix for airbase-ng to prevent the segmentation fault, hence the odd versioning sequences
+
+#1.7 (28 November 2011)
+- Moved iptables functions to routing menu
+- Added in sleeps to allow user to read and comprehend the tables versus the old way of having them scrollback to read
+- Added proper coloring for iptable-save outputs
+- Went through and symetricized menu options
+- Adjusted sleep timings on some menu options
+- Added returns within functions to breakout of "Enable || Kill" Monitor Mode options so that if the user inadvertently picks those options, they are $
+- Small changes to variable naming for speed purposes
+
+#2.0 (20 December 2011)
+- Modified default MTU setting for routing purposes to 1400
+- Clarified password settings for WiFi Extender
+- Removed gateway warnings for Wireless Vaccuum/Stickypot/WiFi Extender.  Didn't like how it looked.  This will now require the user to know a little something about how their system is set up; but then again, quickset is not for skiddies.....
+- Modified Kill/Enable monitor mode settings to prevent a loop trap, thereby allowing a user to null the entry if they dont want to do it.
+- Slight modification of the Ferret menu for symetrics.....
+
+#2.1
+- Added DNSspoof'ing capabilities
+- quickset.sh is now odd numbered version control until DNSspoof custom host capability is functional 
+- Rearranged Quick Attack Menu
+- Modified a couple of functions to use "sleep 1" -vs- read for 'speed and intensity purposes'
+- Modified dev_check--() fail timer to 1 second for readibility purposes
+- Changed "Proceed" option to "Continue" for usability.  Prior method was a numbered system to where the higher decimal number would be the option to continue on.  It was decided to use a constant variable as a method versus a changing number.
+- Removal of letters enclosed with () for readibility
+- Exchange of backquotes for $() to prevent the user from seeing certain outputs
+
+#2.1.1
+- Patched MAC change menu to properly go to desired menu.  2.1 had error with Main Menu and MAC Change using the same letter resulting in non-working case statement.
+
+#2.3
+- Fixed stickypot bug caused by lack of "if statement", which would automatically run no_dev--() without comparing it against $pii being null or not
+- Eterm has replaced xterm, Eterm rocks!
+
+#2.3.1
+- Patched dnsspoof--(), it was calling for a function that did not exist.
+
+#2.5
+- Still waiting on implementation of custom DNS hosts file
+- Added port check to stripem--()
+- Implementation of an IP address check function (ip_mac--())
+- Redefined arpspoof--() menu
+- Eliminated needless else statements with regards to multiple functions.
+- Reversal of changes on changes.txt to make reading go from top to bottom vs. the latter.
+
+#2.7
+- Removal of the self-updating feature, this was found to be excessive due to the fact that quickset lies in a subversion repository
+- Modification of sleep timers
+
+#2.9
+- removed unneeded functions of trap_101--() && cleanup_101--()
+- Added the ability to use channels 12-14 for the wireless portions of the script
+- Added in the MTU ranges of 42-6122
+- Implemented syntax to automatically input the variable for monitor mode via grepping of airmon-ngs output.
+- Redid the layout for Credits and Kudos
+
+#3.0
+- Fixed no_dev--() with respect to Internet connected NICs and Monitor Mode NICs for null entries allowing the user to make a null entry and proceed back to the previous menu
+- Removed physical NIC variable when asked for it during routing features, this was prior to my knowliedge of using cut and such, to query monitor mode nic MAC and such...
+- Modified nics--() to look much nicer and chopped off those frikin 0s on the NIC output for MAC addresses
+- Fixed a loop in mac_control_II--() that prevented the user from regressing to a previous menu
+- Adjusted monitormode--() to have prettier output with reference to mac addresses
+- Fixed the loop issue in wifi_deauth_II--() not allowing previous menu regression from both Specified Channel and Router BSSID entry selections.  As well added screen clearing to the mix to make the output cleaner
+- Added screen clearing to wifi_deauth_III 
+- Modified cleanup--() to only kick the Hidden Process check if a process that is actually hidden from the user has taken place, thereby allowing for a speedier exit from quickset.sh.  As of now the only real hidden process is the dhcp service.  Will advice in the future if there are further such "hidden" processes
+- Fixed the bug within dhcp_svr--() that didnt allow the user to change and implement custom DNS server entries
+
+#3.0.2
+- Fixed monitormode--(), where enabling monitor mode was using wlan0 instead of the $phys_dev variable.
+
+#3.0.4
+- Removal of leading and trailing spaces within awk statements
+- Changed MAC address output to all lowercase
+
+#3.2
+- Fixed a bug with atk_menu--(), to where if hamster.txt existed then the script would quit without continuing.
+- Implemented a variable system for easier coding with respect to ANSI output
+- Changed all variables to lowercase except for $UID which requires capitalization.
+
+#3.4
+- Implemented WACG.sh style reaver command generator!
+- Prevented loop with respect to wifi channel in ferret_II--()
+- Modified r_tech_III--() for code simplification
+- Added default value of 500 for packets per burst with regards to forge_out--() for speed purposes
+- Moved tchan--() as a subfunction of wifi_101--() to a main function of quickset.sh
+- Modified tchan--() to only change channel frequencies when required
+- Modified how quickset.sh handles hidden process kills within cleanup--() via the specified PID file
+- Found and fixed bugs with respect to iwconfig being called upon by functions that called other functions, never acting upon the iwconfig commands.  In other words, WiFi Channels were never set when they were supposed to be.  Was not a huge deal, as the channel was eventually set, but the idea behind it was not correct, so it was fixed..
+- Fixed rtech_III--() where it would call broad_out--() via broad_arp--(), which didn't exist.  Not quite sure how the typo happened, but it is now fixed
+- Implemented internet connectivity and monitor mode detection during startup
+- Arpspoof now checks for an internet gateway as a default
+- Implemented chan_check--() to speed up wireless channel switching decisions
+- Changed the way dhcp_func--() handles custom DNS entries.  The old way used to be done via the shift input technique.  The use of an array has now been implemented for easier reading and an output capability to show the user what they have picked.
+- DHCP server success message working properly now.
+- The ability to use custom hosts for dnsspoof has been added
+- Reverted changes.txt to have the most recent changes on the bottom
+- Pointless comments removed, i.e.: x= ## Nulled
+- Clarified the steps needed to crack WEP in lists--() for easier understanding
+- Changed all single bracket unary operations over to the double bracket system for symetrics
+
+#3.6 (5 November 2012)
+- Modified flow of the DHCP menu
+- Changed formulation of ip_mac--()
+- Implemented IP address checking on the dhcp range for the dhcp server
+- Moved IPTABLES rules around so that IPTABLES are not called for the stickypot
+- Changed where the dhcpd files are kept
+- Changed input readability with regards to the "read" command
+- Added option to cleanup the files that dhcpd leaves
+
+#3.8 (10 March 2013)
+- Modified how quickset handles DHCP stuff
+- Modified how quickset handles cleanup with respect to DHCP stuff
+- Changed the menu for the DHCP server
+- Changed how quickset looks for the DHCP Server process resulting in better efficiency of detecting whether or not a DHCP server was launched via quickset

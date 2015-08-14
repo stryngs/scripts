@@ -1,0 +1,782 @@
+#!/usr/bin/env bash
+
+script_info()
+{
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: dig-em.sh
+## Version:  1.6
+## Copyright (C) <2013>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## I consider any script/program I write to always be a work in progress.
+## Please send any tips/tricks/streamlining ideas/comments/kudos via email to: info [AT] ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Add backgrounding capability for zonefile grabs
+
+## bash test for file existence of options that allow usage of a file as input
+
+## Log the command ran to a file called input or something,  confusing as hell to figure out wtf is what
+
+## Ability to ask the user if they want internal or external NS resolving for certain functions of dig-em.sh
+
+## Add options screen with quickset mentality
+
+## Maybe add in verbosity option for things like ns_parser--()
+
+## Bug reporting feature:
+	## ~/SPIDER_INFOs# wc -l orig_spider.lst
+	## 0 orig_spider.lst
+
+## Create a more targeted approach for finding domains with similar nameservers:
+	## Right now if u have ns1.com and boo.com, the program will trace on both.  This is not cool from a pentest perspective.
+	## Should be an option for strict or non-strict
+
+## Add option for attempt trials
+	## Right now this is based purely on amount of times we do dig_em_again--()
+	## Currently set to 1 extra attempt on a failed NS axfr
+
+#########################
+## Open Resolver Ideas ##
+#########################
+##dig +short test.openresolver.com TXT @1.2.3.4
+##(replace 1.2.3.4 with the IP address or domain name of the DNS server you are testing)
+## If you get "open-resolver-detected" in response, then you have a problem :) 
+
+#dig +short amiopen.openresolvers.org TXT
+#"Your resolver at 208.54.32.122 is CLOSED"
+
+
+#$ host www.cnn.com. ns1.example.com
+#Using domain server:
+#Name: ns1.example.com
+#Address: 192.168.183.130#53
+#Aliases:
+#Host www.cnn.com not found: 5(REFUSED)
+
+#whereas a DNS server that does recursive queries:
+#$ host www.cnn.com. 8.8.8.8
+#Using domain server:
+#Name: 8.8.8.8
+#Address: 8.8.8.8#53
+#Aliases:
+#www.cnn.com has address 157.166.255.18
+#www.cnn.com has address 157.166.255.19
+#www.cnn.com has address 157.166.226.25
+#www.cnn.com has address 157.166.226.26
+
+
+## Possibly deflect to robtex ico DOS for queries on -g
+# Domains using sub.domain.tld as name server (99 shown)
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.6
+	# Modified domain_split--() to account for infinite amount of subdomains!
+
+## 1.4
+	# The check for failed axfr files was increased from 5 lines to 6 (lines or less).
+
+## 1.2
+	# Fixed -h no delete issue
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## dajskdjaslkdjaskldj.com results in $rst not being called
+
+## -g shows output on verification of nameservers for the domain
+
+## -s shows output on grabbing of nameserver for the domains
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## The "Community" for always working towards improving the existing.....
+
+## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking.
+
+## Mad_Gouki for his excellent work with the spidering function, byte--()
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+read
+}
+##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+envir--()
+{
+wrn="\033[31m"   ## Warnings / Infinite Loops
+ins="\033[1;32m" ## Instructions
+out="\033[1;33m" ## Outputs
+hdr="\033[1;34m" ## Headers
+inp="\033[36m"   ## Inputs
+wtf="\033[34m"   ## WTFs
+rst="\e[0m"      ## Reset
+current_ver=1.6
+rel_date="20 January 2015"
+launch_dir=`pwd`
+
+## ns_resolve_error = This lets us know if dig has issues resolving a nameserver for a given domain
+ns_resolve_error=0
+
+## Set query timeout
+time=2
+
+}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~ END Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Repetitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+ns_parser--()
+{
+if [[ $venom_ran -eq 1 ]]; then
+	dig $i NS +noall +answer | tail -n +4 | awk -v OFS='\t' '{print $1, $5}' | tr [:upper:] [:lower:]  >> ns_combined.lst
+	grep $i ns_combined.lst
+	if [[ $? -ne 0 ]]; then
+		echo $i >> error_combined.lst
+	fi
+else
+	dig $i NS +noall +answer | tail -n +4 | awk -v OFS='\t' '{print $1, $5}' | tr [:upper:] [:lower:] >> ns.lst
+	grep $i ns.lst
+	if [[ $? -ne 0 ]]; then
+		echo $i >> error.lst
+	fi
+fi
+}
+
+domain_split--()
+{
+basename="https://www.robtex.com/en/advisory/dns"
+## Break up the domain for spidering
+old_ifs="$IFS"
+IFS='.'
+read -a arachnid_tmp <<< "${arachnid}"
+IFS="$old_ifs"
+## Reverse the domain and tr .'s to /'s
+domain=$(for i in ${arachnid_tmp[@]}; do echo $i; done | tac | tr '\n' '/' | sed 's/.$//')
+}
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END Repetitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Program Function ~~~~~~~~~~~~~~~~~~~~~~~~~~##
+usage--()
+{
+clear
+echo -e "$out\nOptions:$ins
+-f: Ask for the zonefile based on a list of hosts to be parsed
+-h: Ask for the zonefile of a single domain
+
+-s: Spider a given domain for a list of domains that use the same nameservers
+-g: Generate a list of domains for a given nameserver
+-l: Spider a list of domains for other domains that use the same nameservers
+
+Examples:$ins
+./dig-em.sh -f domains.list
+	$hdr- Attempt to grab the zonefiles of the domains listed in domains.lst$ins
+
+./dig-em.sh -h foo.com
+	$hdr- Attempt to grab the zonefile for foo.com$ins
+
+./dig-em.sh -s foo.com 30
+	$hdr- Create a list of domains that use the same nameservers as foo.com, 30 background jobs
+		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
+		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
+
+./dig-em.sh -g dns1.foo.com 2
+	$hdr- Create a list of domains for the nameserver dns1.foo.com, 2 background jobs
+		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
+		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
+
+./dig-em.sh -l domains.list 20
+	$hdr- Create a list of domains that use the same nameservers as the first domain in the list, 20 background jobs
+		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
+		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
+
+$out\rTip:$hdr Use -g option to create a small list of domains belonging to a given nameserver.
+     Take that list and use it as input for -l to create a huge life of domains for a given nameserver.
+     
+     For -s,-g-,-l the background job is optional.  Lack of an integer results in 1 job at a time\n$rst" 
+exit 1
+}
+
+trap--()
+{
+clear
+echo -e "$hdr\nStopped processing at $out$file$hdr using the file $out$launch_dir/$list$wrn"
+cd $launch_dir
+start=$(grep -n $file $list | cut -d: -f1)
+finish=$(echo "$end - $start" | bc)
+let finish++
+echo -e "$out\ntail -n $finish $list > new_$list\n\n$inp"
+echo "tail -n $finish $list > new_$list" > $basedir/restart_dirs
+exit 1
+}
+
+site--()
+{
+	## This function is used to end a single domain axfr
+	end_site--()
+	{
+	if [[ $status -eq 0 ]]; then
+		echo -e "\n\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir\n"
+	fi
+
+	exit 0
+	}
+	
+	## Allows us to try a axfr again
+	dig_em_again--()
+	{
+	while read NS_LIST; do
+		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$host\033[0m\033[1m\n" 
+		(dig @$NS_LIST $host axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
+		
+		## Remove failed result files
+		if [[ $error_check -le 6 ]]; then
+			rm $NS_LIST\.lst
+		fi
+
+		grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
+		if [[ $? -eq 0 ]]; then
+			rm $NS_LIST\.lst
+		fi
+	
+	done < $host\_NS-LIST
+	
+	ls *.lst > /dev/null 2>&1
+	status=$?
+	if [[ $status -eq 0 ]]; then
+		(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
+		echo -e "\n\n"
+		while read tmp_list; do
+				echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$host\n"
+				## The following is a check function to make sure the extra attempt is recording properly
+				echo $tmp_list >> axfr.lst
+		done < tmp_LIST
+	fi
+	}
+
+## Check for the directory
+if [[ -d $host\_INFO ]]; then
+	mkdir $host\_INFO_$$
+	basedir=$launch_dir/$host\_INFO_$$
+else
+	mkdir $host\_INFO
+	basedir=$launch_dir/$host\_INFO
+fi
+
+## Move to the desired directory
+cd $basedir
+
+## Create a list of nameservers
+dig $host NS +multiline +noall +answer +short | sort | sed 's/\.$//' > $host\_NS-LIST
+echo ""
+
+## Display the nameservers
+echo -e "\033[1;34mDNS Servers Discovered for $out$host$hdr:\033[1;33m"
+while read line; do
+	echo -e "\033[0m\033[1m[+] $out$line"
+done < $host\_NS-LIST
+
+## Launch the inner loop
+## Parse through individual nameservers
+while read NS_LIST; do
+	echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$host\033[0m\033[1m\n" 
+	(dig @$NS_LIST $host axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+	error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
+	## Remove failed results files
+	if [[ $error_check -le 6 ]]; then
+		rm $NS_LIST\.lst
+	fi
+
+	grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
+	if [[ $? -eq 0 ]]; then
+		rm $NS_LIST\.lst
+	fi
+
+## Exit the inner loop
+done < $host\_NS-LIST
+
+## Check for failures from the inner loop
+ls *.lst > /dev/null 2>&1
+status=$?
+if [[ $status -eq 0 ]]; then
+	(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
+	
+	## Launch an inner loop declaring successful axfrs
+	while read tmp_list; do
+		echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$host\n"
+		echo $tmp_list >> axfr.lst
+
+	## Exit the inner loop
+	done < tmp_LIST
+	
+	rm *LIST
+	cd $basedir
+	end_site--
+else
+	dig_em_again--
+	if [[ $status -eq 0 ]]; then
+		rm *LIST
+		cd $launch_dir
+		end_site--
+	else
+		cd $launch_dir
+		rm -rf $host\_INFO
+		echo -e "\n"
+	fi
+	
+fi
+}
+
+sites--()
+{	### wtf did i mean here...
+	## This function is used to end to break the loops for multiple domain axfrs
+	end_sites--()
+	{
+	grep 0 $basedir/SUCCESS > /dev/null 2>&1
+	if [[ $? -eq 0 ]]; then
+		echo -e "\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir\n"
+		rm $basedir/SUCCESS
+	fi
+
+	echo -ne "\e[0m"
+	exit 0
+	}
+	
+	## Allows us to try a axfr again
+	dig_em_again--()
+	{
+	while read NS_LIST; do
+		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
+		(dig @$NS_LIST $file axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
+
+		## Remove failed result files
+		if [[ $error_check -le 6 ]]; then
+			rm $NS_LIST\.lst
+		fi
+
+		grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
+		if [[ $? -eq 0 ]]; then
+			rm $NS_LIST\.lst
+		fi
+
+		echo ""
+
+	## Exit the inner loop
+	done < $file\_NS-LIST
+	
+	ls *.lst > /dev/null 2>&1
+	status=$?
+	if [[ $status -eq 0 ]]; then
+		(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
+# 		echo -e "\n"
+
+		## Launch an inner loop declaring successful axfrs
+		while read tmp_list; do
+			echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$file\n"
+			## The following is a check function to make sure the extra attempt is recording properly
+			echo $tmp_list >> axfr.lst
+
+		## Exit the inner loop
+		done < tmp_LIST
+		
+	fi
+	}
+
+## We initiate a trap call so that current progress can be notated
+trap trap-- INT
+
+## Used to count progress
+counter=1
+
+## Declare a variable for the file we are processing for trap call
+list=$file
+
+## Variable for $list linecount
+end=$(wc -l $list | awk '{print $1}')
+
+## Strip out empty lines
+sed -i '/^$/d' $file
+
+## Check for the directory
+if [[ -d DIG_INFOs ]]; then
+	mkdir DIG_INFOs_$$
+	basedir=$launch_dir/DIG_INFOs_$$
+else
+	mkdir DIG_INFOs
+	basedir=$launch_dir/DIG_INFOs
+fi
+
+echo ""
+
+## Launch the outer loop
+while read file; do
+	cd $basedir
+	
+	## Create a folder for the domain
+	mkdir $file\_INFO
+	
+	## Move to the domain's directory
+	cd $file\_INFO
+	
+	## Create a list of nameservers
+	dig $file NS +multiline +noall +answer +short | sort | sed 's/\.$//' > $file\_NS-LIST
+	
+	## Display the nameservers
+	echo -e "\033[1;34mDNS Servers Discovered for $out$file -- ($counter/$end)$hdr:\033[1;33m"
+	let counter++
+	while read line; do
+		echo -e "\033[0m\033[1m[+] $out$line"
+	done < $file\_NS-LIST
+	
+	## Launch the inner loop
+	## Parse through individual nameservers
+	while read NS_LIST; do
+		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
+		(dig @$NS_LIST $file axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
+
+		## Remove failed result files
+		if [[ $error_check -le 6 ]]; then
+			rm $NS_LIST\.lst
+		fi
+
+		grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
+		if [[ $? -eq 0 ]]; then
+			rm $NS_LIST\.lst
+		fi
+
+		echo ""
+
+	## Exit the inner loop
+	done < $file\_NS-LIST
+
+	ls *.lst > /dev/null 2>&1
+	status=$?
+	if [[ $status -eq 0 ]];then
+		(ls *.lst |sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
+	
+	## Launch an inner loop declaring successful axfrs
+		while read tmp_list; do
+			echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$file\n"
+			echo $tmp_list >> axfr.lst
+
+		## Exit the inner loop
+		done < tmp_LIST
+		echo -e "\n"
+
+		rm *LIST
+		cd $basedir
+		echo 0 > SUCCESS
+
+		## Remove the temp files
+		rm -rf $file\_INFO/*LIST
+	else
+		dig_em_again--
+		if [[ $status -eq 0 ]]; then
+			rm *LIST
+			cd $basedir
+			end_sites--
+		else
+			cd $basedir
+			rm -rf $file\_INFO
+			echo -e "\n"
+		fi
+		
+	fi
+
+## Exit the outer loop
+done < $file
+
+cd ..
+
+## Do a check to see if we collected any results.  If not, remove the folder
+ls -l $basedir | grep "total 0" > /dev/null 2>&1
+if [[ $? -eq 0 ]]; then
+	rm -rf $basedir
+	echo ""
+	exit 0
+else
+	end_sites--
+fi
+}
+
+list_gen--()
+{
+## Check for the directory
+if [[ -d DIG_INFOs ]]; then
+	mkdir DIG_INFOs_$$
+	basedir=$launch_dir/DIG_INFOs_$$
+else
+	mkdir DIG_INFOs
+	basedir=$launch_dir/DIG_INFOs
+fi
+
+cd $basedir
+echo -e "$hdr\nGathering a list of domains for:$out $nameserver"
+
+## Show the last page of URLs -- Typically 10
+last_url=$(curl -s who.is/nameserver/$nameserver | grep ">Last<" | grep -E -o 'href.*' | cut -d ' ' -f1 | awk -F/ '{print $NF}' | sed 's/\"//')
+### Mod work
+### page_grab=$(curl -s who.is/nameserver/$nameserver)
+### last_url=$(echo $page_grab | grep -Eo "First.*>Last</a>" | grep -Eo "href.*" | cut -d/ -f4 | cut -d\" -f1)
+### echo $page_grab | grep -Eo 'href=./whois/.*' | sed 's/<\/a><\/td>/FOO/'
+
+## Create the list
+list=$(seq 1 $last_url)
+
+## Curl the list
+for i in $list; do
+echo "Parsing $i/$last_url"
+	curl -s who.is/nameserver/$nameserver/$i | grep -Eo 'href=./whois/.*' | cut -d\> -f2 | cut -d\< -f1 | tail -n +3 >> orig_domains.lst
+done
+
+echo -e "$hdr\nVerifying the Nameserver for those domains"
+echo > ns.lst
+
+### Something about an output would be cool here -- echo "Parsing $i/$last_url"
+ns_parse=$(cat orig_domains.lst)
+for i in $ns_parse; do
+	ns_parser-- &
+	if [ `jobs | grep -i 'running' | wc -l` -ge $LIMIT ]; then
+		wait
+	fi
+done
+
+wait
+echo -e "$hdr\nFiltering out domains which don't use: $out$nameserver"
+for i in $nameserver; do
+	grep $i ns.lst >> filter.lst
+done
+
+awk '{print $1}' filter.lst | sort | uniq | sed 's/\.$//' > domains.lst
+
+echo -e "\n\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir/domains.lst$rst "
+if [[ $ns_resolve_error -eq 1 ]]; then
+	echo -e "$wrn\nErrors were detected during resolution, please refer to $out$basedir/error.lst"
+fi
+exit 0
+}
+
+bite--()
+{
+spider=$arachnid
+domain_split--
+ns=$(dig +noall +short -t NS $arachnid)
+
+## Check for the directory
+if [[ -d DIG_INFOs ]]; then
+	mkdir DIG_INFOs_$$
+	basedir=$launch_dir/DIG_INFOs_$$
+else
+	mkdir DIG_INFOs
+	basedir=$launch_dir/DIG_INFOs
+fi
+
+cd $basedir
+
+## Create 1st layer
+echo -e "$hdr\nCreating a list of similar domains"
+
+curl -s --insecure $basename/$domain/shared.html | sed 's/<\/code><\/li><\/ol>/randomstringwehopetoneverfind\n/g' | grep -Eo "Domains using the same nameservers as.*\randomstringwehopetoneverfind" | sed 's/randomstringwehopetoneverfind/<\/code>/' | grep -oEi "<code>([A-Z0-9.\-]*)<\/code>" | grep -v IN-ADDR.ARPA | cut -d\> -f2 | cut -d\< -f1 | tr '[:upper:]' '[:lower:]' | sort | uniq > orig_spider.lst
+
+echo -e "$hdr\nGrabbing the Nameservers for those domains"
+ns_parse=$(cat orig_spider.lst)
+for i in $ns_parse; do
+	ns_parser-- &
+	if [ `jobs | grep -i 'running' | wc -l` -ge $LIMIT ]; then
+		wait
+	fi
+done
+
+wait
+echo -e "$hdr\nFiltering out domains which don't use the same nameserver as: $out$spider"
+for i in $ns; do
+	grep $i ns.lst >> filter.lst
+done
+
+awk '{print $1}' filter.lst | sort | uniq | sed 's/\.$//' > spider.lst
+cd $launch_dir
+outfile=$basedir/spider.lst
+echo -e "$out\nDone!!$hdr\nRequested Information Listed in $out$outfile\n"
+if [[ -f $basedir/error.lst ]]; then
+	echo -e "$wrn\nErrors were detected during resolution, please refer to $out$basedir/error.lst"
+fi
+
+## Create 2nd layer if wanted
+bite_ran= ## Used to determine if venom--() was called from bite--()
+echo -e "$inp\nCreate list based on spider.lst?$rst"
+read list
+case $list in
+	## $bite_ran signifies a call from bite--()
+	y|Y) bite_ran=1
+	venom-- ;;
+	n|N) cd $launch_dir
+	exit 0 ;;
+esac
+}
+
+venom--()
+{
+	prep--()
+	{
+	cd $basedir
+
+	## Count the lines in $spider
+	lines=$(wc -l $spider | awk '{print $1}')
+
+	## Create a numbering sequence for the list
+	legs=$(seq 1 $lines)
+
+	## Take each line from $spider and create a new list based on a line by line parsing of the file, and parsable based on the number after spider_#.lst; where line 2 in $spider is spider_2.lst
+	engine--
+	}
+
+	## This engine allows us to parse multiple domains within a file in the creation of spider_$i.lst for as many lines within the input file exist
+	layer_2--()
+	### Why were there single quotes around tr?
+	### I've removed them for now...
+	### Was I drinking hard?
+	{
+	domain_split--
+	curl -s --insecure $basename/$domain/shared.html | sed 's/<\/code><\/li><\/ol>/randomstringwehopetoneverfind\n/g' | grep -Eo "Domains using the same nameservers as.*\randomstringwehopetoneverfind" | sed 's/randomstringwehopetoneverfind/<\/code>/' | grep -oEi "<code>([A-Z0-9.\-]*)<\/code>" | grep -v IN-ADDR.ARPA | cut -d\> -f2 | cut -d\< -f1 | tr [:upper:] [:lower:] | sort | uniq >> spider_$i.lst
+	}
+
+	engine--()
+	{
+	for i in $legs; do
+		echo -e "$out\nParsing $i/$lines"
+		
+		## $arachnid will be a line by line parse of the input file
+		### Should not need to encapsulate this within layer_2--().  Eventually this should be tested for speed purposes, but for now we move on
+		arachnid=$(awk "NR==$i{print;exit}" $spider)
+
+		layer_2-- &
+		if [ `jobs | grep -i 'running' | wc -l` -ge $LIMIT ]; then
+			wait
+		fi
+	done
+
+	wait
+
+	## Combine the files into one massive file
+	cat spider_* > orig_spider_combined.lst
+	cat $spider >> orig_spider_combined.lst
+	sort orig_spider_combined.lst | uniq > foo
+	mv -f foo orig_spider_combined.lst
+
+	echo -e "$hdr\nGrabbing the Nameservers for those domains"
+	ns_parse=$(cat orig_spider_combined.lst)
+	
+	## This lets ns_parser--() know to keep ns.lst pristine
+	venom_ran=1
+	for i in $ns_parse; do
+		ns_parser-- &
+		if [ `jobs | grep -i 'running' | wc -l` -ge $LIMIT ]; then
+			wait
+		fi
+	done
+
+	wait
+	echo -e "$hdr\nFiltering out domains which don't use the same nameserver as: $out$x"
+	for i in $ns; do
+		grep $i ns_combined.lst >> filter_combined.lst
+	done
+
+	awk '{print $1}' filter_combined.lst | sort | uniq > spider_combined.lst
+	echo -e "$out\nDone!!$hdr\nRequested Information Listed in $out$basedir/spider_combined.lst\n$rst "
+	if [[ -f $basedir/error_combined.lst ]]; then
+		echo -e "$wrn\nErrors were detected during resolution, please refer to $out$basedir/error_combined.lst"
+	fi
+	exit 0
+	}
+
+if [[ $bite_ran -eq 1 ]]; then
+ 	spider=$basedir/spider.lst
+	prep--
+else
+	## Check for the directory
+	if [[ -d DIG_INFOs ]]; then
+		mkdir DIG_INFOs_$$
+		basedir=$launch_dir/DIG_INFOs_$$
+	else
+		mkdir DIG_INFOs
+		basedir=$launch_dir/DIG_INFOs
+	fi
+
+	spider=$launch_dir/$spider
+
+	### For now we will strip the first domain listed within $spider for the nameserver.  If taking input from bite--(), this has already been checked.  Eventually we should have an option to declare which nameserver or list of nameservers we want $ns to be
+	### Rename $x to something better
+	x=$(head -n1 $spider)
+	ns=$(dig +noall +short -t NS $x | tr [:upper:] [:lower:])
+	prep--
+fi
+}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~ END Starting Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+envir--
+if [[ -z $1 ]]; then
+	usage--
+fi
+
+if [[ -z $3 ]]; then
+	LIMIT=1
+else
+	LIMIT=$3
+fi
+
+clear
+while getopts "f:g:h:l:s:" opt;do
+	case "$opt" in
+		f) file="$OPTARG"
+		sites-- ;;
+
+		g) nameserver="$OPTARG"
+		list_gen-- ;;
+
+		h) host="$OPTARG"
+		site-- $host ;;
+
+		l) spider="$OPTARG"
+		venom-- ;;
+
+		s) arachnid="$OPTARG"
+		bite-- ;;
+
+		\?) usage-- ;;
+
+		:) echo "Option -$OPTARG requires an argument."
+		exit 1 ;;
+	esac
+
+done
+##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
