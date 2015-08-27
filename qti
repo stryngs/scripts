@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+
+## Filename: qti [Query 'teh IRC]
+## Concept:  Create database of IRC users and do something with it...
+## Usage:    ./qti <irc-logfile>
+## Author:   stryngs
+## Notes:
+	## I've only tested this with irssi logs
+
+import re
+import os
+import sqlite3 as lite
+import sys
+
+try:
+    filename = sys.argv[1]
+except:
+    print 'Usage: ./qti <irc logfile>\n'
+    sys.exit(1)
+
+## Test db connection and prep if new db
+con = None
+try:
+	con = lite.connect('irc-logs.db')
+	cur = con.cursor()
+	if con:
+		cur.execute("CREATE TABLE IF NOT EXISTS irc_join(Id INT, nick TEXT, whois TEXT, chan TEXT)")
+		cur.execute("CREATE TABLE IF NOT EXISTS irc_quit(Id INT, nick TEXT, whois TEXT)")
+		con.close()
+		con = None
+
+except lite.Error, e:
+	print "Error %s:" % e.args[0]
+	sys.exit(1)
+
+## Open logfile
+log = open(filename, 'r')
+
+## Create byline list of file
+lineList = []
+for line in log:
+	lineList.append(line)
+
+## Closeout the logfile
+log.close()
+
+## Parse out joins ##
+## Create join search func
+def join_search():
+	expr = re.compile('.*\[.*?\]\s+has joined\s+#')
+	return [hit for hit in lineList if expr.match(hit)]
+
+## Create list of successful parsings for joins
+joinList = list(join_search())
+
+## Create tempfile of desired info
+with open ('j.tmp', 'w') as jfile:
+	for i in joinList:
+		who = i.split(' ')[2]
+		where = i.split(' ')[3]
+		where = re.sub('(^\[|]$)', '', where)
+		chan = i.split(' ')[6]
+		chan = re.sub('\\n$', '', chan)
+		jfile.write(who + " " + where + " " + chan + "\n")
+
+
+## Open j.tmp
+jTmp = open('j.tmp', 'r')
+
+## Create byline list of j.tmp
+jTmpLst = []
+for line in jTmp:
+	jTmpLst.append(line)
+
+## Closeout and remove j.tmp
+jTmp.close()
+#os.remove('j.tmp')
+
+## Search and remove duplicates from jTmpLst
+joinListSort = sorted(set(jTmpLst))
+
+
+## Parse out quits ##
+## Create quit search func
+def quit_search():
+	expr = re.compile('.*\[.*?\]\s+has quit\s+\[')
+	return [hit for hit in lineList if expr.match(hit)]
+
+## Create list of successful parsings for quits
+quitList = list(quit_search())
+
+## Create tempfile of desired info
+with open ('q.tmp', 'w') as qfile:
+	for i in quitList:
+		who = i.split(' ')[2]
+		where = i.split(' ')[3]
+		where = re.sub('(^\[|]$)', '', where)
+		qfile.write(who + " " + where + "\n")
+
+## Open q.tmp
+qTmp = open('q.tmp', 'r')
+
+## Create byline list of q.tmp
+qTmpLst = []
+for line in qTmp:
+	qTmpLst.append(line)
+
+## Closeout and remove j.tmp
+qTmp.close()
+#os.remove('q.tmp')
+
+## Search and remove duplicates from qTmpLst
+quitListSort = sorted(set(qTmpLst))
+
+
+## Open db and begin work
+con = lite.connect('irc-logs.db')
+cur = con.cursor()
+
+## Update tables
+with con:
+## Insert join data
+	counter=1
+	for i in joinListSort:
+		who = i.split(' ')[0]
+		where = i.split(' ')[1]
+		where = re.sub('(^\[|]$)', '', where)
+		chan = i.split(' ')[2]
+		chan = re.sub('\\n$', '', chan)
+		cur.execute("INSERT INTO irc_join VALUES(?, ?, ?, ?);", (counter, who, where, chan))
+		counter += 1
+
+## Insert quit data
+	counter=1
+	for i in quitListSort:
+		who = i.split(' ')[0]
+		where = i.split(' ')[1]
+		where = re.sub('(^\[|]$)', '', where)
+		cur.execute("INSERT INTO irc_quit VALUES(?, ?, ?);", (counter, who, where))
+		counter += 1
+
+con.close()
+print 'Finished!'
+print 'Filename: irc-logs.db'
+print ''
+exit(0)
