@@ -1,132 +1,13 @@
 #!/usr/bin/env bash
 
-script_info()
-{
-##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Filename: dig-em.sh
-## Version:  1.6
-## Copyright (C) <2013>  <stryngs>
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Concept ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: dig-em
 
-##  This program is free software: you can redistribute it and/or modify
-##  it under the terms of the GNU General Public License as published by
-##  the Free Software Foundation, either version 3 of the License, or
-##  (at your option) any later version.
-
-##  This program is distributed in the hope that it will be useful,
-##  but WITHOUT ANY WARRANTY; without even the implied warranty of
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##  GNU General Public License for more details.
-
-##  You should have received a copy of the GNU General Public License
-##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## This script was written with the intent for Legal PenTesting uses only.
-## Make sure that you have consent prior to use on a device other than your own.
-## Doing so without the above is a violation of Federal/State Laws within the United States of America.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## I consider any script/program I write to always be a work in progress.
-## Please send any tips/tricks/streamlining ideas/comments/kudos via email to: info [AT] ethicalreporting.org
-
-## Comments written with a triple # are notes to myself, please ignore them.
+## This script will allow a user to perform a varied number of DNS Nameserver tests in a quick and efficient manner
+## For further details, check the bottom of this file
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Add backgrounding capability for zonefile grabs
-
-## bash test for file existence of options that allow usage of a file as input
-
-## Log the command ran to a file called input or something,  confusing as hell to figure out wtf is what
-
-## Ability to ask the user if they want internal or external NS resolving for certain functions of dig-em.sh
-
-## Add options screen with quickset mentality
-
-## Maybe add in verbosity option for things like ns_parser--()
-
-## Bug reporting feature:
-	## ~/SPIDER_INFOs# wc -l orig_spider.lst
-	## 0 orig_spider.lst
-
-## Create a more targeted approach for finding domains with similar nameservers:
-	## Right now if u have ns1.com and boo.com, the program will trace on both.  This is not cool from a pentest perspective.
-	## Should be an option for strict or non-strict
-
-## Add option for attempt trials
-	## Right now this is based purely on amount of times we do dig_em_again--()
-	## Currently set to 1 extra attempt on a failed NS axfr
-
-#########################
-## Open Resolver Ideas ##
-#########################
-##dig +short test.openresolver.com TXT @1.2.3.4
-##(replace 1.2.3.4 with the IP address or domain name of the DNS server you are testing)
-## If you get "open-resolver-detected" in response, then you have a problem :) 
-
-#dig +short amiopen.openresolvers.org TXT
-#"Your resolver at 208.54.32.122 is CLOSED"
-
-
-#$ host www.cnn.com. ns1.example.com
-#Using domain server:
-#Name: ns1.example.com
-#Address: 192.168.183.130#53
-#Aliases:
-#Host www.cnn.com not found: 5(REFUSED)
-
-#whereas a DNS server that does recursive queries:
-#$ host www.cnn.com. 8.8.8.8
-#Using domain server:
-#Name: 8.8.8.8
-#Address: 8.8.8.8#53
-#Aliases:
-#www.cnn.com has address 157.166.255.18
-#www.cnn.com has address 157.166.255.19
-#www.cnn.com has address 157.166.226.25
-#www.cnn.com has address 157.166.226.26
-
-
-## Possibly deflect to robtex ico DOS for queries on -g
-# Domains using sub.domain.tld as name server (99 shown)
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## 1.6
-	# Modified domain_split--() to account for infinite amount of subdomains!
-
-## 1.4
-	# The check for failed axfr files was increased from 5 lines to 6 (lines or less).
-
-## 1.2
-	# Fixed -h no delete issue
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## dajskdjaslkdjaskldj.com results in $rst not being called
-
-## -g shows output on verification of nameservers for the domain
-
-## -s shows output on grabbing of nameserver for the domains
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## First and foremost, to God above for giving me the abilities I have, Amen.
-
-## The "Community" for always working towards improving the existing.....
-
-## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking.
-
-## Mad_Gouki for his excellent work with the spidering function, byte--()
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-read
-}
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 envir--()
 {
@@ -137,8 +18,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=1.6
-rel_date="20 January 2015"
+current_ver=1.8
+rel_date="27 August 2015"
 launch_dir=`pwd`
 
 ## ns_resolve_error = This lets us know if dig has issues resolving a nameserver for a given domain
@@ -146,7 +27,6 @@ ns_resolve_error=0
 
 ## Set query timeout
 time=2
-
 }
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~ END Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
@@ -194,23 +74,23 @@ echo -e "$out\nOptions:$ins
 -l: Spider a list of domains for other domains that use the same nameservers
 
 Examples:$ins
-./dig-em.sh -f domains.list
+./dig-em -f domains.list
 	$hdr- Attempt to grab the zonefiles of the domains listed in domains.lst$ins
 
-./dig-em.sh -h foo.com
+./dig-em -h foo.com
 	$hdr- Attempt to grab the zonefile for foo.com$ins
 
-./dig-em.sh -s foo.com 30
+./dig-em -s foo.com 30
 	$hdr- Create a list of domains that use the same nameservers as foo.com, 30 background jobs
 		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
 		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
 
-./dig-em.sh -g dns1.foo.com 2
+./dig-em -g dns1.foo.com 2
 	$hdr- Create a list of domains for the nameserver dns1.foo.com, 2 background jobs
 		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
 		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
 
-./dig-em.sh -l domains.list 20
+./dig-em -l domains.list 20
 	$hdr- Create a list of domains that use the same nameservers as the first domain in the list, 20 background jobs
 		$out- Background jobs are independent of the results created.  The higher the number, the faster the script runs.
 		$wrn- This can create a DOS if not used responsibly, try to limit connections to a reasonable amount.$ins
@@ -242,41 +122,7 @@ site--()
 	{
 	if [[ $status -eq 0 ]]; then
 		echo -e "\n\033[1;33mDone!!$hdr\nRequested Information Listed in $out$basedir\n"
-	fi
-
-	exit 0
-	}
-	
-	## Allows us to try a axfr again
-	dig_em_again--()
-	{
-	while read NS_LIST; do
-		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$host\033[0m\033[1m\n" 
-		(dig @$NS_LIST $host axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
-		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
-		
-		## Remove failed result files
-		if [[ $error_check -le 6 ]]; then
-			rm $NS_LIST\.lst
-		fi
-
-		grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
-		if [[ $? -eq 0 ]]; then
-			rm $NS_LIST\.lst
-		fi
-	
-	done < $host\_NS-LIST
-	
-	ls *.lst > /dev/null 2>&1
-	status=$?
-	if [[ $status -eq 0 ]]; then
-		(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
-		echo -e "\n\n"
-		while read tmp_list; do
-				echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$host\n"
-				## The following is a check function to make sure the extra attempt is recording properly
-				echo $tmp_list >> axfr.lst
-		done < tmp_LIST
+		exit 0
 	fi
 	}
 
@@ -339,23 +185,24 @@ if [[ $status -eq 0 ]]; then
 	cd $basedir
 	end_site--
 else
-	dig_em_again--
-	if [[ $status -eq 0 ]]; then
-		rm *LIST
-		cd $launch_dir
-		end_site--
-	else
-		cd $launch_dir
-		rm -rf $host\_INFO
-		echo -e "\n"
-	fi
-	
+	cd $launch_dir
+	rm -rf $host\_INFO
+	echo -e "\n"
 fi
 }
 
 sites--()
-{	### wtf did i mean here...
-	## This function is used to end to break the loops for multiple domain axfrs
+{
+	which bc > /dev/null 2>&1
+	if [[ $? -ne 0 ]]; then
+		echo -e "$wrn The program bc is required for full functionality of dig-em.  Continue anyways? (y/n)$rst"
+		read warning
+		case $warning in
+			y|Y) ;;
+			*) exit 1 ;;
+		esac
+	fi
+
 	end_sites--()
 	{
 	grep 0 $basedir/SUCCESS > /dev/null 2>&1
@@ -366,47 +213,6 @@ sites--()
 
 	echo -ne "\e[0m"
 	exit 0
-	}
-	
-	## Allows us to try a axfr again
-	dig_em_again--()
-	{
-	while read NS_LIST; do
-		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
-		(dig @$NS_LIST $file axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
-		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
-
-		## Remove failed result files
-		if [[ $error_check -le 6 ]]; then
-			rm $NS_LIST\.lst
-		fi
-
-		grep "communications error to" $NS_LIST\.lst > /dev/null 2>&1
-		if [[ $? -eq 0 ]]; then
-			rm $NS_LIST\.lst
-		fi
-
-		echo ""
-
-	## Exit the inner loop
-	done < $file\_NS-LIST
-	
-	ls *.lst > /dev/null 2>&1
-	status=$?
-	if [[ $status -eq 0 ]]; then
-		(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
-# 		echo -e "\n"
-
-		## Launch an inner loop declaring successful axfrs
-		while read tmp_list; do
-			echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$file\n"
-			## The following is a check function to make sure the extra attempt is recording properly
-			echo $tmp_list >> axfr.lst
-
-		## Exit the inner loop
-		done < tmp_LIST
-		
-	fi
 	}
 
 ## We initiate a trap call so that current progress can be notated
@@ -498,17 +304,9 @@ while read file; do
 		## Remove the temp files
 		rm -rf $file\_INFO/*LIST
 	else
-		dig_em_again--
-		if [[ $status -eq 0 ]]; then
-			rm *LIST
-			cd $basedir
-			end_sites--
-		else
-			cd $basedir
-			rm -rf $file\_INFO
-			echo -e "\n"
-		fi
-		
+		cd $basedir
+		rm -rf $file\_INFO
+		echo -e "\n"
 	fi
 
 ## Exit the outer loop
@@ -660,9 +458,6 @@ venom--()
 
 	## This engine allows us to parse multiple domains within a file in the creation of spider_$i.lst for as many lines within the input file exist
 	layer_2--()
-	### Why were there single quotes around tr?
-	### I've removed them for now...
-	### Was I drinking hard?
 	{
 	domain_split--
 	curl -s --insecure $basename/$domain/shared.html | sed 's/<\/code><\/li><\/ol>/randomstringwehopetoneverfind\n/g' | grep -Eo "Domains using the same nameservers as.*\randomstringwehopetoneverfind" | sed 's/randomstringwehopetoneverfind/<\/code>/' | grep -oEi "<code>([A-Z0-9.\-]*)<\/code>" | grep -v IN-ADDR.ARPA | cut -d\> -f2 | cut -d\< -f1 | tr [:upper:] [:lower:] | sort | uniq >> spider_$i.lst
@@ -704,7 +499,7 @@ venom--()
 	done
 
 	wait
-	echo -e "$hdr\nFiltering out domains which don't use the same nameserver as: $out$x"
+	echo -e "$hdr\nFiltering out domains which don't use the same nameserver as: $out$fNS"
 	for i in $ns; do
 		grep $i ns_combined.lst >> filter_combined.lst
 	done
@@ -733,9 +528,8 @@ else
 	spider=$launch_dir/$spider
 
 	### For now we will strip the first domain listed within $spider for the nameserver.  If taking input from bite--(), this has already been checked.  Eventually we should have an option to declare which nameserver or list of nameservers we want $ns to be
-	### Rename $x to something better
-	x=$(head -n1 $spider)
-	ns=$(dig +noall +short -t NS $x | tr [:upper:] [:lower:])
+	fNS=$(head -n1 $spider)
+	ns=$(dig +noall +short -t NS $fNS | tr [:upper:] [:lower:])
 	prep--
 fi
 }
@@ -780,3 +574,125 @@ while getopts "f:g:h:l:s:" opt;do
 done
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: dig-em
+## Version:  1.8
+## Copyright (C) <2013>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## I consider any script/program I write to always be a work in progress.
+## Please send any tips/tricks/streamlining ideas/comments/kudos via email to: info [AT] ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Add backgrounding capability for zonefile grabs
+
+## bash test for file existence of options that allow usage of a file as input
+
+## Log the command ran to a file called input or something,  confusing as hell to figure out wtf is what
+
+## Ability to ask the user if they want internal or external NS resolving for certain functions of dig-em
+
+## Maybe add in verbosity option for things like ns_parser--()
+
+## Bug reporting feature:
+	## ~/SPIDER_INFOs# wc -l orig_spider.lst
+	## 0 orig_spider.lst
+
+## Create a more targeted approach for finding domains with similar nameservers:
+	## Right now if u have ns1.com and boo.com, the program will trace on both.
+	## Should be an option for strict or non-strict
+
+#########################
+## Open Resolver Ideas ##
+#########################
+##dig +short test.openresolver.com TXT @1.2.3.4
+##(replace 1.2.3.4 with the IP address or domain name of the DNS server you are testing)
+## If you get "open-resolver-detected" in response, then you have a problem :) 
+
+#dig +short amiopen.openresolvers.org TXT
+#"Your resolver at 208.54.32.122 is CLOSED"
+
+
+#$ host www.cnn.com. ns1.example.com
+#Using domain server:
+#Name: ns1.example.com
+#Address: 192.168.183.130#53
+#Aliases:
+#Host www.cnn.com not found: 5(REFUSED)
+
+#whereas a DNS server that does recursive queries:
+#$ host www.cnn.com. 8.8.8.8
+#Using domain server:
+#Name: 8.8.8.8
+#Address: 8.8.8.8#53
+#Aliases:
+#www.cnn.com has address 157.166.255.18
+#www.cnn.com has address 157.166.255.19
+#www.cnn.com has address 157.166.226.25
+#www.cnn.com has address 157.166.226.26
+
+
+## Possibly deflect to robtex ico DOS for queries on -g
+# Domains using sub.domain.tld as name server (99 shown)
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.8
+	# Cleaned up the structure a little bit
+	# Moved notes to the bottom
+	# Removed dig_em_again--() capabilities
+
+## 1.6
+	# Modified domain_split--() to account for infinite amount of subdomains!
+
+## 1.4
+	# The check for failed axfr files was increased from 5 lines to 6 (lines or less).
+
+## 1.2
+	# Fixed -h no delete issue
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## dajskdjaslkdjaskldj.com results in $rst not being called
+
+## -g shows output on verification of nameservers for the domain
+
+## -s shows output on grabbing of nameserver for the domains
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## The "Community" for always working towards improving the existing.....
+
+## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking.
+
+## Mad_Gouki for his excellent work with the spidering function, byte--()
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
