@@ -74,7 +74,7 @@ for line in jTmp:
 
 ## Closeout and remove j.tmp
 jTmp.close()
-#os.remove('j.tmp')
+os.remove('j.tmp')
 
 ## Search and remove duplicates from jTmpLst
 joinListSort = sorted(set(jTmpLst))
@@ -105,9 +105,9 @@ qTmpLst = []
 for line in qTmp:
 	qTmpLst.append(line)
 
-## Closeout and remove j.tmp
+## Closeout and remove q.tmp
 qTmp.close()
-#os.remove('q.tmp')
+os.remove('q.tmp')
 
 ## Search and remove duplicates from qTmpLst
 quitListSort = sorted(set(qTmpLst))
