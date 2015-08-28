@@ -21,7 +21,7 @@ except:
 ## Test db connection and prep if new db
 con = None
 try:
-	con = lite.connect('irc-logs.db')
+	con = lite.connect('irc-logs.sqlite')
 	cur = con.cursor()
 	if con:
 		cur.execute("CREATE TABLE IF NOT EXISTS irc_join(Id INT, nick TEXT, whois TEXT, chan TEXT)")
@@ -114,7 +114,7 @@ quitListSort = sorted(set(qTmpLst))
 
 
 ## Open db and begin work
-con = lite.connect('irc-logs.db')
+con = lite.connect('irc-logs.sqlite')
 cur = con.cursor()
 
 ## Update tables
@@ -141,6 +141,6 @@ with con:
 
 con.close()
 print 'Finished!'
-print 'Filename: irc-logs.db'
+print 'Filename: irc-logs.sqlite'
 print ''
 exit(0)
