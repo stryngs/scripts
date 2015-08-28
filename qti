@@ -22,10 +22,10 @@ except:
 con = None
 try:
 	con = lite.connect('irc-logs.sqlite')
-	cur = con.cursor()
+	db = con.cursor()
 	if con:
-		cur.execute("CREATE TABLE IF NOT EXISTS irc_join(Id INT, nick TEXT, whois TEXT, chan TEXT)")
-		cur.execute("CREATE TABLE IF NOT EXISTS irc_quit(Id INT, nick TEXT, whois TEXT)")
+		db.execute("CREATE TABLE IF NOT EXISTS irc_join(Id INT, nick TEXT, whois TEXT, chan TEXT)")
+		db.execute("CREATE TABLE IF NOT EXISTS irc_quit(Id INT, nick TEXT, whois TEXT)")
 		con.close()
 		con = None
 
@@ -44,7 +44,10 @@ for line in log:
 ## Closeout the logfile
 log.close()
 
-## Parse out joins ##
+##########################
+## Parse out who joined ##
+##########################
+
 ## Create join search func
 def join_search():
 	expr = re.compile('.*\[.*?\]\s+has joined\s+#')
@@ -54,68 +57,57 @@ def join_search():
 joinList = list(join_search())
 
 ## Create tempfile of desired info
-with open ('j.tmp', 'w') as jfile:
+with open ('j.tmp', 'w') as jFile:
 	for i in joinList:
 		who = i.split(' ')[2]
 		where = i.split(' ')[3]
 		where = re.sub('(^\[|]$)', '', where)
 		chan = i.split(' ')[6]
 		chan = re.sub('\\n$', '', chan)
-		jfile.write(who + " " + where + " " + chan + "\n")
+		jFile.write(who + " " + where + " " + chan + "\n")
 
-
-## Open j.tmp
-jTmp = open('j.tmp', 'r')
 
 ## Create byline list of j.tmp
-jTmpLst = []
-for line in jTmp:
-	jTmpLst.append(line)
-
-## Closeout and remove j.tmp
-jTmp.close()
-os.remove('j.tmp')
+with open ('j.tmp', 'r') as jTmp:
+	jTmpLst = []
+	for line in jTmp:
+		jTmpLst.append(line)
 
 ## Search and remove duplicates from jTmpLst
 joinListSort = sorted(set(jTmpLst))
 
-
-## Parse out quits ##
 ## Create quit search func
 def quit_search():
 	expr = re.compile('.*\[.*?\]\s+has quit\s+\[')
 	return [hit for hit in lineList if expr.match(hit)]
 
+########################
+## Parse out who quit ##
+########################
+
 ## Create list of successful parsings for quits
 quitList = list(quit_search())
 
 ## Create tempfile of desired info
-with open ('q.tmp', 'w') as qfile:
+with open ('q.tmp', 'w') as qFile:
 	for i in quitList:
 		who = i.split(' ')[2]
 		where = i.split(' ')[3]
 		where = re.sub('(^\[|]$)', '', where)
-		qfile.write(who + " " + where + "\n")
-
-## Open q.tmp
-qTmp = open('q.tmp', 'r')
+		qFile.write(who + " " + where + "\n")
 
 ## Create byline list of q.tmp
-qTmpLst = []
-for line in qTmp:
-	qTmpLst.append(line)
-
-## Closeout and remove q.tmp
-qTmp.close()
-os.remove('q.tmp')
+with open('q.tmp', 'r') as qTmp:
+	qTmpLst = []
+	for line in qTmp:
+		qTmpLst.append(line)
 
 ## Search and remove duplicates from qTmpLst
 quitListSort = sorted(set(qTmpLst))
 
-
 ## Open db and begin work
 con = lite.connect('irc-logs.sqlite')
-cur = con.cursor()
+db = con.cursor()
 
 ## Update tables
 with con:
@@ -127,7 +119,7 @@ with con:
 		where = re.sub('(^\[|]$)', '', where)
 		chan = i.split(' ')[2]
 		chan = re.sub('\\n$', '', chan)
-		cur.execute("INSERT INTO irc_join VALUES(?, ?, ?, ?);", (counter, who, where, chan))
+		db.execute("INSERT INTO irc_join VALUES(?, ?, ?, ?);", (counter, who, where, chan))
 		counter += 1
 
 ## Insert quit data
@@ -136,11 +128,13 @@ with con:
 		who = i.split(' ')[0]
 		where = i.split(' ')[1]
 		where = re.sub('(^\[|]$)', '', where)
-		cur.execute("INSERT INTO irc_quit VALUES(?, ?, ?);", (counter, who, where))
+		db.execute("INSERT INTO irc_quit VALUES(?, ?, ?);", (counter, who, where))
 		counter += 1
 
-con.close()
+## Cleanup
+os.remove('j.tmp')
+os.remove('q.tmp')
 print 'Finished!'
 print 'Filename: irc-logs.sqlite'
 print ''
-exit(0)
+sys.exit(0)
