@@ -18,52 +18,86 @@ db = con.cursor()
 with open ('TLDs', 'r') as tldFile:
 	tldList = []
 	for line in tldFile:
+		line = line.strip()
+		line = '\.' + line + '$'
 		tldList.append(line)
+print '1. TLD import complete'
 
-## Sort TLDs
-tldList = sorted(tldList)
-
-## Rip domain info
+## Create set of whois info from db
+dbSet=set()
 with open ('tmp.lst', 'w') as tFile:
 	with con:
 		db.execute("SELECT whois FROM irc_join;")
-		lcount = 1
 		while True:
 			row = db.fetchone()
 			if row == None:
 				break
 			row = str(row[0]).split('@')[1].strip().lower()
-			dcount = 1
-			for tld in tldList:
-				tld = tld.strip()
-				###print 'Whois Info: ', [row]
-				###print [tld]
-				###print 'SQL Row Count: %s' % lcount
-				###print 'TLD Count: %s' % dcount
-				###print 'TLD: %s' % tld
-				###print ''
-				tld = '\.' + tld + '$'
-				tldMatch = re.search(tld, row)
-				if tldMatch:
-					dot = row.split('.')
-					domain = dot[-2]
-					tld = dot[-1]
-					tgt = '%s.%s' % (domain,tld)
-					print 'SQL Row Count: %s' % lcount
-					print tgt
-					print ''
-					tFile.write(dot[-2] + '.' + dot[-1] + "\n")
-				dcount += 1
-			lcount += 1
+			dbSet.add(row)
+		db.execute("SELECT whois from irc_quit;")
+		while True:
+			row = db.fetchone()
+			if row == None:
+				break
+			row = str(row[0]).split('@')[1].strip().lower()
+			dbSet.add(row)
+print '2. dbSet created'
 
-## Strip out empty line and cleanup
-file('target.lst', "w").write(file('tmp.lst').read().strip())
+## Convert dbSet to dbList
+dbList = []
+for row in dbSet:
+	dbList.append(row)
+print '3. dbList conversion done'
+print '4. Starting domain storage'
+
+## Grab domains from dbList
+with open ('target.lst', 'w') as tFile:
+	for tld in tldList:
+		for row in dbList:
+			if re.search(tld, row):
+				###print 'Domain detected: %s' % row
+				tFile.write(row + "\n")
+				## Buggy code, no idea why....
+				###dot = row.split('.')
+				###domain = dot[-2]
+				###tld = dot[-1]
+				###tgt = '%s.%s' % (domain,tld)
+				###print tgt
+				###print ''
+				###print ''
+print '5. Domains stored'
+
+## Strip out empty line
+file('tmp.lst', 'w').write(file('target.lst').read().strip())
+
+## Convert tmp.lst to just the domain and tld, removing any duplicates
+dup = set()
+with open('target.lst', 'w') as oFile:
+	with open('tmp.lst', 'r') as iFile:
+		for line in iFile:
+			dot = line.split('.')
+			domain = dot[-2]
+			tld = dot[-1]
+			tgt = '%s.%s' % (domain,tld)
+			dup.add(tgt)
+	for i in dup:
+		oFile.write(i.strip() + "\n")
+print '6. Domains parsed'
+
+## Remove final duplicates and cleanup
+os.remove('tmp.lst')
 lines = open('target.lst', 'r').readlines()
 lines_set = set(lines)
-with open('target.lst', 'w') as out:
-	for line in lines_set:
-		out.write(line)
+l = []
+for i in lines_set:
+	l.append(i)
+l = sorted(l)
+with open('tmp.lst', 'w') as oFile:
+	for line in l:
+		oFile.write(line)
+file('target.lst', 'w').write(file('tmp.lst').read().strip())
 os.remove('tmp.lst')
+print ''
 print 'Finished!'
 print 'Filename: target.lst'
 print ''
