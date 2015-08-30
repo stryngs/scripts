@@ -78,7 +78,7 @@ except lite.Error, e:
 
 ## JOIN Stuff
 ## Create tempfile of desired info
-with open ('j.tmp', 'w') as jFile:
+with open('j.tmp', 'w') as jFile:
 	for i in joinList:
 		who = i.split(' ')[jNick]
 		where = i.split(' ')[jWhois]
@@ -88,7 +88,7 @@ with open ('j.tmp', 'w') as jFile:
 		jFile.write(who + " " + where + " " + chan + "\n")
 
 ## Create byline list of j.tmp
-with open ('j.tmp', 'r') as jTmp:
+with open('j.tmp', 'r') as jTmp:
 	jTmpLst = []
 	for line in jTmp:
 		jTmpLst.append(line)
@@ -98,7 +98,7 @@ joinListSort = sorted(set(jTmpLst))
 
 ## QUIT Stuff
 ## Create tempfile of desired info
-with open ('q.tmp', 'w') as qFile:
+with open('q.tmp', 'w') as qFile:
 	for i in quitList:
 		who = i.split(' ')[qNick]
 		where = i.split(' ')[qWhois]
