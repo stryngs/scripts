@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Concept ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: ascii-me
+
+## This script will allow a user to quickly and easily encode an ascii string in hex
+## This script can be used for things like SQL injection engagements and whatnot
+
+## For further details, check the bottom of this file
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+import argparse
+from collections import defaultdict
+import re
+from urllib import unquote
+
+## Launcher options
+parser = argparse.ArgumentParser(description='On-the-fly HEX and ASCII URL converter', prog='ascii-me', usage='%(prog)s [alpha char lower num upper]')
+parser.add_argument('-d', action='store_true', help='Decodes HEX to ASCII' )
+parser.add_argument('dict_choice', metavar='Dictionary Types:', type=str, nargs='*', help="'alpha', 'char', 'lower', 'num', 'upper'")#, choices = ['alpha', 'char', 'lower', 'num', 'upper'])
+args = parser.parse_args()
+
+def menu():
+	print "On-the-fly HEX and ASCII URL converter"
+	print ""
+	print "Available Options:"
+	print "    HEX encoding:  alpha, char, lower, num, upper"
+	print "    HEX decoding: -d"
+	print ""
+	print "optional arguments:"
+	print "    -h, --help         show the help message and exits"
+	exit(1)
+
+## argparse workarounds
+if args.dict_choice and args.d:
+	menu()
+
+if args.d:
+	## Ask for URL
+	url = raw_input("String to encode> ")
+	print "Decoded URL is: ", unquote(url)
+	exit(0)
+
+if not args.dict_choice and not args.d:
+	menu()
+
+if None in args.dict_choice:
+	menu()
+
+if 'alpha' in args.dict_choice or 'char' in args.dict_choice or 'lower' in args.dict_choice or 'num' in args.dict_choice or 'upper' in args.dict_choice:
+	pass
+else:
+	menu()
+
+## Ask for URL
+url = raw_input("String to encode> ")
+
+## Create dictionaries
+d_alpha = {'a': '%61', 'b': '%62', 'c': '%63', 'd': '%64', 'e': '%65', 'f': '%66', 'g': '%67', 'h': '%68', 'i': '%69', 'j': '%6A', 'k': '%6B', 'l': '%6C', 'm': '%6D', 'n': '%6E', 'o': '%6F', 'p': '%70', 'q': '%71', 'r': '%72', 's': '%73', 't': '%74', 'u': '%75', 'v': '%76', 'w': '%77', 'x': '%78', 'y': '%79', 'z': '%7A', 'A': '%41', 'B': '%42', 'C': '%43', 'D': '%44', 'E': '%45', 'F': '%46', 'G': '%47', 'H': '%48', 'I': '%49', 'J': '%4A', 'K': '%4B', 'L': '%4C', 'M': '%4D', 'N': '%4E', 'O': '%4F', 'P': '%50', 'Q': '%51', 'R': '%52', 'S': '%53', 'T': '%54', 'U': '%55', 'V': '%56', 'W': '%57', 'X': '%58', 'Y': '%59', 'Z': '%5A'}
+
+d_char = {' ': '%20', '!': '%21', '"': '%22', '#': '%23', '$': '%24', '%': '%25', '&': '%26', "'": '%27', '(': '%28', ')': '%29', '*': '%2A', '+': '%2B', ',': '%2C', '-': '%2D', '.': '%2E', '/': '%2F', ':': '%3A', ';': '%3B', '<': '%3C', '=': '%3D', '>': '%3E', '?': '%3F', '@': '%40', '[': '%5B', '\\': '%5C', ']': '%5D', '^': '%5E', '_': '%5F', '`': '%60', '{': '%7B', '|': '%7C', '}': '%7D', '~': '%7E'}
+
+d_lower = {'a': '%61', 'b': '%62', 'c': '%63', 'd': '%64', 'e': '%65', 'f': '%66', 'g': '%67', 'h': '%68', 'i': '%69', 'j': '%6A', 'k': '%6B', 'l': '%6C', 'm': '%6D', 'n': '%6E', 'o': '%6F', 'p': '%70', 'q': '%71', 'r': '%72', 's': '%73', 't': '%74', 'u': '%75', 'v': '%76', 'w': '%77', 'x': '%78', 'y': '%79', 'z': '%7A'}
+
+d_num = {'0': '%30', '1': '%31', '2': '%32', '3': '%33', '4': '%34', '5': '%35', '6': '%36', '7': '%37', '8': '%38', '9': '%39'}
+
+d_upper = {'A': '%41', 'B': '%42', 'C': '%43', 'D': '%44', 'E': '%45', 'F': '%46', 'G': '%47', 'H': '%48', 'I': '%49', 'J': '%4A', 'K': '%4B', 'L': '%4C', 'M': '%4D', 'N': '%4E', 'O': '%4F', 'P': '%50', 'Q': '%51', 'R': '%52', 'S': '%53', 'T': '%54', 'U': '%55', 'V': '%56', 'W': '%57', 'X': '%58', 'Y': '%59', 'Z': '%5A'}
+
+## Convert user choice over to a dictionary
+user_selection = {'alpha': d_alpha, 'num': d_num, 'lower': d_lower, 'upper': d_upper, 'char': d_char}
+
+## Take url and make a list out of it
+l_url = list(url)
+
+## Create the encoded lists
+encode = []
+double = []
+
+## Create list of the arguments
+###print ""
+###print "Our work so far:"
+###print args.dict_choice
+###print ""
+list_of_dicts = list(args.dict_choice)
+
+## Merge called dictionaries into one:
+user_dict={}
+for i in list_of_dicts:
+	merge = user_selection.get(i)
+	user_dict.update(merge)
+	###print user_dict
+
+## Iterate through the list and perform the encoding
+for i in l_url:
+	val = user_dict.get(i, i)
+	### print val
+	### print "Adding %s to the list." % i
+	encode.append(val)
+
+## Iterate through the list and perform the double encoding
+for i in l_url:
+	val = user_dict.get(i, i)
+	if "%" in val:
+		val = val.replace('%', '')
+		### print val
+		### print "Adding %s to the list." % i
+		val = '%25' + str(val)
+
+	double.append(val)
+
+## Show the newly encoded URL
+final_string = ''.join(encode)
+double_string = ''.join(double)
+print "Encoded URL is: ", final_string
+print "Double URL is: ", double_string
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: ascii-me
+## Version:  0.4
+## Copyright (C) <2015>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Incorporate exclusions
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Debate on using decaff ideas
+	## d_lower = {chr(x): hex(x).replace('0x', '%').upper() for x in range(97, 123)}
+	## Dictionary combinining 3.5 style
+		## special_char = {**special_char1, **special_char2, **special_char3, **special_char4}
+	## Translation ideas
+		## encode = url.translate(str.maketrans(choice))
+		## double_encode = url.translate(str.maketrans({key: ('%25' + val.replace('%', '')) for key, val in choice.items()}))
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## The "Community" for always working towards improving the existing.....
+
+## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking.
+
+## Special thanks goes out to:
+	## h4llig4n and decaff for helping me out with the double encoding aspect
+
+	## decaff for helping me with variablizing dictionary choices
+
+	## Jack64 for helping me with iterative logic
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
