@@ -25,12 +25,10 @@ with open(filename, 'r') as lFile:
 ## Create search functions
 ### Currently only works with irssi style logs
 def join_search():
-	#expr = re.compile('.*\[.*?\]\s+has joined\s+#')
-	expr = re.compile('.*?\-!\-.*\[.*?\]\s+has joined\s+#')
+	expr = re.compile('^\d{2}:\d{2} -!-.*\[.*?\]\s+has joined\s+#')
 	return [hit for hit in lineList if expr.match(hit)]
 def quit_search():
-	#expr = re.compile('.*\[.*?\]\s+has quit\s+\[')
-	expr = re.compile('.*?\-!\-.*\[.*?\]\s+has quit\s+\[')
+	expr = re.compile('^\d{2}:\d{2} -!-.*\[.*?\]\s+has quit\s+\[')
 	return [hit for hit in lineList if expr.match(hit)]
 
 ## Create list of successful parsings
