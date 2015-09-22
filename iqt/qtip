@@ -24,7 +24,7 @@ with open ('TLDs', 'r') as tldFile:
 print '1. TLD import complete'
 
 ## Create set of whois info from db
-dbSet=set()
+dbSet = set()
 with open ('tmp.lst', 'w') as tFile:
 	with con:
 		db.execute("SELECT whois FROM irc_join;")
@@ -57,14 +57,6 @@ with open ('target.lst', 'w') as tFile:
 			if re.search(tld, row):
 				###print 'Domain detected: %s' % row
 				tFile.write(row + "\n")
-				## Buggy code, no idea why....
-				###dot = row.split('.')
-				###domain = dot[-2]
-				###tld = dot[-1]
-				###tgt = '%s.%s' % (domain,tld)
-				###print tgt
-				###print ''
-				###print ''
 print '5. Domains stored'
 
 ## Strip out empty line
