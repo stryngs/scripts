@@ -11,6 +11,9 @@
 ## dig-em
 * Aids a user in performing a varied number of DNS Nameserver tests in a quick and efficient manner
 
+## email-em
+* Send an email via the command line
+
 ## hydrafy
 * A way to automatically interact with hydra.
 * Contains comprehensive list of default usernames and passwords
