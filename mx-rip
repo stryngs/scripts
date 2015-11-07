@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+## Filename: mx-rip
+## Concept:  Rip MX record for a given set of email addresses and do something with it...
+## Usage:    ./mx-rip <List of email addresses>
+## Author:   stryngs
+
+import re, os, sys
+from dns.resolver import query
+import sqlite3 as lite
+
+try:
+    filename = sys.argv[1]
+except:
+    print 'Usage: ./mx-rip <List of email addresses>\n'
+    sys.exit(1)
+
+## Rip domains
+with open(filename, 'r') as dFile:
+	dSet = set()
+	for entry in dFile:
+		dSet.add(entry.split('@')[1].strip())
+
+## Test db connection and prep if new db
+con = None
+try:
+	con = lite.connect('Records.sqlite')
+	db = con.cursor()
+	if con:
+		db.execute("CREATE TABLE IF NOT EXISTS mx_rec(domain TEXT, mx TEXT)")
+		con.close()
+		con = None
+except lite.Error, e:
+	print "Error %s:" % e.args[0]
+	sys.exit(1)
+
+## Open db and begin work
+con = lite.connect('Records.sqlite')
+db = con.cursor()
+
+## Update tables
+with con:
+	## By domain
+	for domain in dSet:
+		mxRec = query(domain, 'MX')
+		rList = []
+		## By resolver
+		for resolver in mxRec:
+			rList.append(resolver.exchange.to_text())
+		## Add the results to the db
+		for i in rList:
+			db.execute("INSERT INTO mx_rec VALUES(?, ?);", (domain, i))
+
+print 'Finished!'
+print 'Filename: Records.sqlite'
+print ''
+sys.exit(0)

@@ -1,0 +1,31 @@
+#!/usr/bin/python2.7
+
+import re, smtplib, sys
+from dns.resolver import query
+
+## Filename: epull
+## Concept:  Verify the existence of an email address
+## Usage:    ./epull <Email Address>
+## Author:   stryngs
+
+## Query mx exchangers
+domain = sys.argv[1].split('@')[1]
+mxRec = query(domain, 'MX')
+mList = []
+for resolver in mxRec:
+		mList.append(resolver.exchange.to_text())
+
+## Connect and check if email address is real
+s = smtplib.SMTP(re.sub('.$', '', mList[0]) + ':25')
+s.helo()
+fCode, fResponse = s.mail('john@doe.com')
+if fCode == 250:
+	tCode, tResponse = s.rcpt(sys.argv[1])
+	if tCode == 250:
+		print 'Valid Email'
+	else:
+		print '%s -- %s' % (tCode, tResponse)
+else:
+	print '%s -- %s' % (fCode, fResponse)
+s.quit()
+

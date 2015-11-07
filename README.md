@@ -14,12 +14,18 @@
 ## email-em
 * Send an email via the command line
 
+## epull
+* Verify the existence of an email address
+
 ## hydrafy
 * A way to automatically interact with hydra.
 * Contains comprehensive list of default usernames and passwords
 
 ## iqt
 * IRC Query Tool
+
+## mx-rip
+* Rip MX record for a given set of email addresses and do something with it...
 
 ## quickset
 * A quick way to implement MITM style attacks for wired or wireless scenarios
