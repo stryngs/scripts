@@ -5,6 +5,9 @@
 * Brute force decoder for base64 encoded strings
 * Helps to deal with server-side obfuscation
 
+## cdig
+* Helps the user to compare dig lists
+
 ## CookieJack.sh
 * An ingenious method for looping webpages to infinity and beyond using a simple iframe
 

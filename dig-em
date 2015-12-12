@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+### for domain in *; do cd $domain; ls > ~/pop; while read ns; do echo $domain\%$ns >> ~/NS.lst; done < ~/pop; cd ..; done
+
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Concept ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: dig-em
 
@@ -18,8 +21,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=1.8
-rel_date="27 August 2015"
+current_ver=1.9
+rel_date="12 December 2015"
 launch_dir=`pwd`
 
 ## ns_resolve_error = This lets us know if dig has issues resolving a nameserver for a given domain
@@ -51,11 +54,13 @@ fi
 domain_split--()
 {
 basename="https://www.robtex.com/en/advisory/dns"
+
 ## Break up the domain for spidering
 old_ifs="$IFS"
 IFS='.'
 read -a arachnid_tmp <<< "${arachnid}"
 IFS="$old_ifs"
+
 ## Reverse the domain and tr .'s to /'s
 domain=$(for i in ${arachnid_tmp[@]}; do echo $i; done | tac | tr '\n' '/' | sed 's/.$//')
 }
@@ -127,12 +132,12 @@ site--()
 	}
 
 ## Check for the directory
-if [[ -d $host\_INFO ]]; then
-	mkdir $host\_INFO_$$
-	basedir=$launch_dir/$host\_INFO_$$
+if [[ -d $host ]]; then
+	mkdir $host\_$$
+	basedir=$launch_dir/$host\_$$
 else
-	mkdir $host\_INFO
-	basedir=$launch_dir/$host\_INFO
+	mkdir $host
+	basedir=$launch_dir/$host
 fi
 
 ## Move to the desired directory
@@ -172,16 +177,22 @@ ls *.lst > /dev/null 2>&1
 status=$?
 if [[ $status -eq 0 ]]; then
 	(ls *.lst | sed 's/\.lst$//' > tmp_LIST) > /dev/null 2>&1
-	
+
 	## Launch an inner loop declaring successful axfrs
 	while read tmp_list; do
 		echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$host\n"
-		echo $tmp_list >> axfr.lst
 
 	## Exit the inner loop
 	done < tmp_LIST
-	
+
 	rm *LIST
+
+	## Remove .lst extension
+	for i in *.lst; do
+		mv "$i" "$(echo "$i" | sed 's/\.lst$//')"
+# 		mv "$i" "$(echo "$i" | sed -e 's/\.lst$//' -)"
+	done
+
 	cd $basedir
 	end_site--
 else
@@ -244,23 +255,23 @@ echo ""
 ## Launch the outer loop
 while read file; do
 	cd $basedir
-	
+
 	## Create a folder for the domain
-	mkdir $file\_INFO
-	
+	mkdir $file
+
 	## Move to the domain's directory
-	cd $file\_INFO
-	
+	cd $file
+
 	## Create a list of nameservers
 	dig $file NS +multiline +noall +answer +short | sort | sed 's/\.$//' > $file\_NS-LIST
-	
+
 	## Display the nameservers
 	echo -e "\033[1;34mDNS Servers Discovered for $out$file -- ($counter/$end)$hdr:\033[1;33m"
 	let counter++
 	while read line; do
 		echo -e "\033[0m\033[1m[+] $out$line"
 	done < $file\_NS-LIST
-	
+
 	## Launch the inner loop
 	## Parse through individual nameservers
 	while read NS_LIST; do
@@ -291,13 +302,18 @@ while read file; do
 	## Launch an inner loop declaring successful axfrs
 		while read tmp_list; do
 			echo -ne "\033[0m\033[1m[+] \033[1;36mSuccess with $out$tmp_list \033[31mFOR \033[1;33m$file\n"
-			echo $tmp_list >> axfr.lst
 
 		## Exit the inner loop
 		done < tmp_LIST
 		echo -e "\n"
 
 		rm *LIST
+
+		## Remove .lst extension
+		for i in *; do
+			mv "$i" "$(echo "$i" | sed 's/\.lst$//')"
+		done
+
 		cd $basedir
 		echo 0 > SUCCESS
 
@@ -340,9 +356,9 @@ cd $basedir
 echo -e "$hdr\nGathering a list of domains for:$out $nameserver"
 
 ## Show the last page of URLs -- Typically 10
-last_url=$(curl -s who.is/nameserver/$nameserver | grep ">Last<" | grep -E -o 'href.*' | cut -d ' ' -f1 | awk -F/ '{print $NF}' | sed 's/\"//')
+last_url=$(curl -s https://who.is/nameserver/$nameserver | grep ">Last<" | grep -E -o 'href.*' | cut -d ' ' -f1 | awk -F/ '{print $NF}' | sed 's/\"//')
 ### Mod work
-### page_grab=$(curl -s who.is/nameserver/$nameserver)
+### page_grab=$(curl -s https://who.is/nameserver/$nameserver)
 ### last_url=$(echo $page_grab | grep -Eo "First.*>Last</a>" | grep -Eo "href.*" | cut -d/ -f4 | cut -d\" -f1)
 ### echo $page_grab | grep -Eo 'href=./whois/.*' | sed 's/<\/a><\/td>/FOO/'
 
@@ -352,7 +368,7 @@ list=$(seq 1 $last_url)
 ## Curl the list
 for i in $list; do
 echo "Parsing $i/$last_url"
-	curl -s who.is/nameserver/$nameserver/$i | grep -Eo 'href=./whois/.*' | cut -d\> -f2 | cut -d\< -f1 | tail -n +3 >> orig_domains.lst
+	curl -s https://who.is/nameserver/$nameserver/$i | grep -Eo 'href=./whois/.*' | cut -d\> -f2 | cut -d\< -f1 | tail -n +3 >> orig_domains.lst
 done
 
 echo -e "$hdr\nVerifying the Nameserver for those domains"
@@ -402,7 +418,7 @@ cd $basedir
 ## Create 1st layer
 echo -e "$hdr\nCreating a list of similar domains"
 
-curl -s --insecure $basename/$domain/shared.html | sed 's/<\/code><\/li><\/ol>/randomstringwehopetoneverfind\n/g' | grep -Eo "Domains using the same nameservers as.*\randomstringwehopetoneverfind" | sed 's/randomstringwehopetoneverfind/<\/code>/' | grep -oEi "<code>([A-Z0-9.\-]*)<\/code>" | grep -v IN-ADDR.ARPA | cut -d\> -f2 | cut -d\< -f1 | tr '[:upper:]' '[:lower:]' | sort | uniq > orig_spider.lst
+curl -s -A 'blah' --insecure $basename/$domain/shared.html | sed 's/<\/code><\/li><\/ol>/randomstringwehopetoneverfind\n/g' | grep -Eo "Domains using the same nameservers as.*\randomstringwehopetoneverfind" | sed 's/randomstringwehopetoneverfind/<\/code>/' | grep -oEi "<code>([A-Z0-9.\-]*)<\/code>" | grep -v IN-ADDR.ARPA | cut -d\> -f2 | cut -d\< -f1 | tr '[:upper:]' '[:lower:]' | sort | uniq > orig_spider.lst
 
 echo -e "$hdr\nGrabbing the Nameservers for those domains"
 ns_parse=$(cat orig_spider.lst)
@@ -467,7 +483,7 @@ venom--()
 	{
 	for i in $legs; do
 		echo -e "$out\nParsing $i/$lines"
-		
+
 		## $arachnid will be a line by line parse of the input file
 		### Should not need to encapsulate this within layer_2--().  Eventually this should be tested for speed purposes, but for now we move on
 		arachnid=$(awk "NR==$i{print;exit}" $spider)
@@ -488,7 +504,7 @@ venom--()
 
 	echo -e "$hdr\nGrabbing the Nameservers for those domains"
 	ns_parse=$(cat orig_spider_combined.lst)
-	
+
 	## This lets ns_parser--() know to keep ns.lst pristine
 	venom_ran=1
 	for i in $ns_parse; do
@@ -513,7 +529,7 @@ venom--()
 	}
 
 if [[ $bite_ran -eq 1 ]]; then
- 	spider=$basedir/spider.lst
+	spider=$basedir/spider.lst
 	prep--
 else
 	## Check for the directory
@@ -576,7 +592,7 @@ done
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: dig-em
-## Version:  1.8
+## Version:  1.9
 ## Copyright (C) <2013>  <stryngs>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -608,13 +624,13 @@ done
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Fix the bug with -l and -s caused by the site change
+
 ## Add backgrounding capability for zonefile grabs
 
 ## bash test for file existence of options that allow usage of a file as input
 
 ## Log the command ran to a file called input or something,  confusing as hell to figure out wtf is what
-
-## Ability to ask the user if they want internal or external NS resolving for certain functions of dig-em
 
 ## Maybe add in verbosity option for things like ns_parser--()
 
@@ -662,6 +678,11 @@ done
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.9
+	# Fixed https issues
+	# Removed _INFO and .lst extensions
+	# axfr.lst was removed
+
 ## 1.8
 	# Cleaned up the structure a little bit
 	# Moved notes to the bottom

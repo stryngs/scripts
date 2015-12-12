@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+## Filename: cdig
+## Concept:  Compare old and new target domain lists for dig-em to prevent duplicate scanning
+## Usage:    ./cdig
+## Author:   stryngs
+
+## Create the comparisons to prevent re-digging
+oFile = raw_input("List of domains previously scanned?\n")
+nFile = raw_input("List of domains to scan?\n")
+
+## Create a set of pre-dug
+pSet = set()
+with open(oFile, 'r') as iFile:
+	old = iFile.readlines()
+	for i in old:
+		pSet.add(i.strip())
+
+## Create a set of new domains
+nSet = set()
+with open(nFile, 'r') as iFile:
+	new = iFile.readlines()
+	for i in new:
+		nSet.add(i.strip())
+
+## Compare the sets, and remove old from new
+tList = []
+for i in nSet - pSet:
+	tList.append(i.strip())
+
+## Create a file of non-dug domains
+with open ('nTgts.lst', 'w') as oFile:
+	for i in tList:
+		oFile.write(i + '\n')
