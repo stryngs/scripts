@@ -204,16 +204,6 @@ fi
 
 sites--()
 {
-	which bc > /dev/null 2>&1
-	if [[ $? -ne 0 ]]; then
-		echo -e "$wrn The program bc is required for full functionality of dig-em.  Continue anyways? (y/n)$rst"
-		read warning
-		case $warning in
-			y|Y) ;;
-			*) exit 1 ;;
-		esac
-	fi
-
 	end_sites--()
 	{
 	grep 0 $basedir/SUCCESS > /dev/null 2>&1
@@ -226,6 +216,17 @@ sites--()
 	exit 0
 	}
 
+## Deal with math
+which bc > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+	echo -e "$wrn The program bc is required for full functionality of dig-em.  Continue anyways? (y/n)$rst"
+	read warning
+	case $warning in
+		y|Y) ;;
+		*) exit 1 ;;
+	esac
+fi
+	
 ## We initiate a trap call so that current progress can be notated
 trap trap-- INT
 
@@ -318,10 +319,10 @@ while read file; do
 		echo 0 > SUCCESS
 
 		## Remove the temp files
-		rm -rf $file\_INFO/*LIST
+		rm -rf $file/*LIST
 	else
 		cd $basedir
-		rm -rf $file\_INFO
+		rm -rf $file
 		echo -e "\n"
 	fi
 
@@ -678,6 +679,9 @@ done
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.9.1
+	# Fixed -f bug
+
 ## 1.9
 	# Fixed https issues
 	# Removed _INFO and .lst extensions
