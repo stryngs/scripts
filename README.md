@@ -27,7 +27,10 @@
 * Contains comprehensive list of default usernames and passwords
 
 ## iqt
-* IRC Query Tool
+* qti
+  * Create database of IRC users and do something with it...
+* qtip
+  * Parse the database from qti and do something with it...
 
 ## mx-rip
 * Rip MX record for a given set of email addresses and do something with it...
