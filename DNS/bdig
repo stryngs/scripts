@@ -1,0 +1,179 @@
+#!/usr/bin/env python
+import sqlite3 as lite
+import csv, sys, os, re, shutil
+
+'''
+PREP THE ENVIRONMENT
+'''
+## Create BaseDir
+bDir = os.getcwd()
+
+## Name the DIG_INFOs directory
+dDir = raw_input('DIG_INFOs Directory? [%s/DIG_INFOs]\n' % bDir)
+if not dDir:
+	dDir = '%s/DIG_INFOs' % bDir
+else:
+	print ''
+
+'''
+PREP THE DB
+'''
+## Create DB
+dbName = raw_input('Desired name for DB? [%s/axfr.sqlite]\n' % bDir)
+if not dbName:
+	dbName = '%s/axfr.sqlite' % bDir
+else:
+	print ''
+
+wDir = raw_input('Desired name for working directory? [%s/PARSER_FILEs]\n' % bDir)
+if not wDir:
+	wDir = '%s/PARSER_FILEs' % bDir
+else:
+	print ''
+
+if os.path.isdir(wDir):
+	wExists = raw_input('%s already exists, remove and continue? [y/N]\n' % wDir)
+	if not wExists:
+		exit(1)
+	elif wExists == 'n':
+		exit(1)
+	elif wExists == 'N':
+		exit(1)
+	else:
+		print 'Removing and continuing'
+		print ''
+		shutil.rmtree(wDir)
+
+if os.path.isfile(dbName):
+	dFile = raw_input('%s already exists\nUpdate and continue? [y/N]\n' % dbName)
+	if not dFile:
+		exit(1)
+	elif dFile == 'n':
+		exit(1)
+	elif dFile == 'N':
+		exit(1)
+	else:
+		print '\nUpdating %s and continuing' % dbName
+
+print 'Proceeding to build %s\n' % dbName
+con = lite.connect(dbName)
+db = con.cursor()
+if con:
+	db.execute("CREATE TABLE IF NOT EXISTS axfr(dm TEXT, own TEXT, ttl TEXT, rr TEXT, data TEXT)")
+	db.execute("CREATE TABLE IF NOT EXISTS dm2ns(dm TEXT, ns TEXT)")
+	db.execute("CREATE TABLE IF NOT EXISTS ns2dm(ns TEXT, dm TEXT)")
+	db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT)")
+	con.close()
+	con = None
+
+
+'''
+PREP THE FILES
+'''
+## Create directory list for dDir
+dList = os.listdir(dDir)
+
+## Create working and temporary directory
+os.mkdir('PARSER_FILEs')
+wDir = '%s/PARSER_FILEs' % bDir
+os.mkdir('%s/TMP_FILEs' % wDir)
+tDir = '%s/TMP_FILEs' % wDir
+
+## Rip the axfr from the largest NS file for each domain to a domain specific file and to the main file
+## Ignore any blank lines or ;'s
+expr = re.compile('^;')
+with open('%s/axfr.lst' % wDir, 'w') as aFile:
+	for domain in dList:
+		nsList = os.listdir('%s/%s' % (dDir, domain))
+		lFile = 0
+		nServer = ""
+		for ns in nsList:
+			sz = os.path.getsize('%s/%s/%s' % (dDir, domain, ns))
+			if sz > lFile:
+				lFile = sz
+				nServer = ns
+		with open('%s/%s/%s' % (dDir, domain, nServer), 'r') as iPut:
+			with open('%s/%s' % (tDir, domain), 'w') as oFile:
+				iList = iPut.read().splitlines()
+				for line in iList:
+					if line and not expr.match(line):
+						oFile.write(domain + ' ' + line + '\n')
+						aFile.write(domain + ' ' + line + '\n')
+
+## Remove empty files
+for i in os.listdir(tDir):
+	sz = os.path.getsize('%s/%s' % (tDir, i))
+	if sz == 0:
+		os.remove('%s/%s' % (tDir, i))
+
+## Reassign dList as a successful list
+dList = os.listdir(tDir)
+
+## Create dm2ns and ns2dm lists
+dFile = open('%s/dm2ns.lst' % wDir, 'w')
+nFile = open('%s/ns2dm.lst' % wDir, 'w')
+for domain in dList:
+	nsList = os.listdir('%s/%s' % (dDir, domain))
+	for ns in nsList:
+		dFile.write('%s,%s' % (domain, ns) + '\n')
+		nFile.write('%s,%s' % (ns, domain) + '\n')
+dFile.close()
+nFile.close()
+
+
+'''
+Update the tables
+'''
+## Open db and begin work
+con = lite.connect(dbName)
+con.text_factory = str
+db = con.cursor()
+
+with con:
+	### Insert data table
+	aFile = open('%s/axfr.lst' % wDir, 'r')
+	while True:
+		row = aFile.readline().rstrip()
+		if not row:
+			break
+		dmRow = row.split()[0]
+		ownRow = row.split()[1]
+		ttlRow = row.split()[2]
+		rrRow = row.split()[4]
+		data = row.split()[5:]
+		dataRow = ' '.join(map(str, data))
+		db.execute("INSERT INTO axfr VALUES(?, ?, ?, ?, ?);", (dmRow, ownRow, ttlRow, rrRow, dataRow))
+	aFile.close()
+	
+	## Insert dm2ns table
+	with open('%s/dm2ns.lst' % wDir, 'r') as iFile:
+		rows = csv.reader(iFile, delimiter=',')
+		con.executemany("INSERT INTO dm2ns VALUES (?, ?)", rows)
+
+	## Insert ns2dm table
+	with open('%s/ns2dm.lst' % wDir, 'r') as iFile:
+		rows = csv.reader(iFile, delimiter=',')
+		con.executemany("INSERT INTO ns2dm VALUES (?, ?)", rows)
+
+	## Insert scanned table
+	mFile = open('nTgts.lst', 'r')
+	while True:
+		mRow = mFile.readline().rstrip()
+		if not mRow:
+			break
+		db.execute("INSERT INTO scanned VALUES(?);", (mRow,))
+	mFile.close()
+
+
+'''
+CLEANUP
+'''
+## Remove tmp directory
+shutil.rmtree(wDir)
+
+
+###select COUNT(*) from axfr;
+###select COUNT(*) from dm2ns;
+###select COUNT(*) from ns2dm;
+###select COUNT(*) from scanned;
+
