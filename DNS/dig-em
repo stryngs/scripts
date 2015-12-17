@@ -21,8 +21,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=1.9
-rel_date="12 December 2015"
+current_ver=1.9.3
+rel_date="17 December 2015"
 launch_dir=`pwd`
 
 ## ns_resolve_error = This lets us know if dig has issues resolving a nameserver for a given domain
@@ -197,7 +197,7 @@ if [[ $status -eq 0 ]]; then
 	end_site--
 else
 	cd $launch_dir
-	rm -rf $host\_INFO
+	rm -rf $host
 	echo -e "\n"
 fi
 }
@@ -593,7 +593,7 @@ done
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: dig-em
-## Version:  1.9
+## Version:  1.9.3
 ## Copyright (C) <2013>  <stryngs>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -679,6 +679,9 @@ done
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.9.3
+	# fixed -h bug
+
 ## 1.9.1
 	# Fixed -f bug
 
