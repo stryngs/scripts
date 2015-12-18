@@ -21,8 +21,8 @@ hdr="\033[1;34m" ## Headers
 inp="\033[36m"   ## Inputs
 wtf="\033[34m"   ## WTFs
 rst="\e[0m"      ## Reset
-current_ver=1.9.3
-rel_date="17 December 2015"
+current_ver=1.9.5
+rel_date="18 December 2015"
 launch_dir=`pwd`
 
 ## ns_resolve_error = This lets us know if dig has issues resolving a nameserver for a given domain
@@ -157,7 +157,7 @@ done < $host\_NS-LIST
 ## Parse through individual nameservers
 while read NS_LIST; do
 	echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$host\033[0m\033[1m\n" 
-	(dig @$NS_LIST $host axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+	(dig @$NS_LIST $host axfr +time=$time +onesoa > $NS_LIST\.lst) > /dev/null 2>&1
 	error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
 	## Remove failed results files
 	if [[ $error_check -le 6 ]]; then
@@ -277,7 +277,7 @@ while read file; do
 	## Parse through individual nameservers
 	while read NS_LIST; do
 		echo -ne "\033[0m\033[1m[~] \033[1;34mDigging through \033[1;33m$NS_LIST \033[1;34mfor Zone Records on \033[1;33m$file\033[0m\033[1m" 
-		(dig @$NS_LIST $file axfr +time=$time > $NS_LIST\.lst) > /dev/null 2>&1
+		(dig @$NS_LIST $file axfr +time=$time +onesoa > $NS_LIST\.lst) > /dev/null 2>&1
 		error_check=$(wc -l $NS_LIST\.lst | awk '{print $1}')
 
 		## Remove failed result files
@@ -593,7 +593,7 @@ done
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 ## Filename: dig-em
-## Version:  1.9.3
+## Version:  1.9.5
 ## Copyright (C) <2013>  <stryngs>
 
 ##  This program is free software: you can redistribute it and/or modify
@@ -679,6 +679,9 @@ done
 
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## 1.9.5
+	# added +onesoa flag
+
 ## 1.9.3
 	# fixed -h bug
 
