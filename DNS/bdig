@@ -111,17 +111,17 @@ for i in os.listdir(tDir):
 ## Reassign dList as a successful list
 dList = os.listdir(tDir)
 
-## Create dm2ns, ns2dm, domains and nameservers lists
+## Create domains, dm2ns, ns2dm and nameservers lists
+domainsFile = open('%s/domains.lst' % wDir, 'w')
 dm2nsFile = open('%s/dm2ns.lst' % wDir, 'w')
 ns2dmFile = open('%s/ns2dm.lst' % wDir, 'w')
-domainsFile = open('%s/domains.lst' % wDir, 'w')
 nameserversFile = open('%s/nameservers.lst' % wDir, 'w')
 for domain in dList:
 	nsList = os.listdir('%s/%s' % (dDir, domain))
+	domainsFile.write('%s' % (domain) + '\n')
 	for ns in nsList:
 		dm2nsFile.write('%s,%s' % (domain, ns) + '\n')
 		ns2dmFile.write('%s,%s' % (ns, domain) + '\n')
-		domainsFile.write('%s' % (domain) + '\n')
 		nameserversFile.write('%s' % (ns) + '\n')
 dm2nsFile.close()
 ns2dmFile.close()
