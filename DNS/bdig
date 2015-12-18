@@ -63,6 +63,8 @@ if con:
 	db.execute("CREATE TABLE IF NOT EXISTS dm2ns(dm TEXT, ns TEXT)")
 	db.execute("CREATE TABLE IF NOT EXISTS ns2dm(ns TEXT, dm TEXT)")
 	db.execute("CREATE TABLE IF NOT EXISTS scanned(dm TEXT)")
+	db.execute("CREATE TABLE IF NOT EXISTS domains(dm TEXT)")
+	db.execute("CREATE TABLE IF NOT EXISTS nameservers(ns TEXT)")
 	con.close()
 	con = None
 
@@ -109,21 +111,41 @@ for i in os.listdir(tDir):
 ## Reassign dList as a successful list
 dList = os.listdir(tDir)
 
-## Create dm2ns and ns2dm lists
-dFile = open('%s/dm2ns.lst' % wDir, 'w')
-nFile = open('%s/ns2dm.lst' % wDir, 'w')
+## Create dm2ns, ns2dm, domains and nameservers lists
+dm2nsFile = open('%s/dm2ns.lst' % wDir, 'w')
+ns2dmFile = open('%s/ns2dm.lst' % wDir, 'w')
+domainsFile = open('%s/domains.lst' % wDir, 'w')
+nameserversFile = open('%s/nameservers.lst' % wDir, 'w')
 for domain in dList:
 	nsList = os.listdir('%s/%s' % (dDir, domain))
 	for ns in nsList:
-		dFile.write('%s,%s' % (domain, ns) + '\n')
-		nFile.write('%s,%s' % (ns, domain) + '\n')
-dFile.close()
-nFile.close()
+		dm2nsFile.write('%s,%s' % (domain, ns) + '\n')
+		ns2dmFile.write('%s,%s' % (ns, domain) + '\n')
+		domainsFile.write('%s' % (domain) + '\n')
+		nameserversFile.write('%s' % (ns) + '\n')
+dm2nsFile.close()
+ns2dmFile.close()
+domainsFile.close()
+nameserversFile.close()
 
 
 '''
 Update the tables
 '''
+def sColumn(File, Table):
+	iFile = open(File, 'r')
+	while True:
+		iRow = iFile.readline().rstrip()
+		if not iRow:
+			break
+		db.execute("INSERT INTO %s VALUES(?);" % Table, (iRow,))
+	iFile.close()
+
+def dColumn(File, Table):
+	with open(File, 'r') as iFile:
+		rows = csv.reader(iFile, delimiter=',')
+		con.executemany("INSERT INTO '%s' VALUES (?, ?)" % Table, rows)
+
 ## Open db and begin work
 con = lite.connect(dbName)
 con.text_factory = str
@@ -145,25 +167,12 @@ with con:
 		db.execute("INSERT INTO axfr VALUES(?, ?, ?, ?, ?);", (dmRow, ownRow, ttlRow, rrRow, dataRow))
 	aFile.close()
 	
-	## Insert dm2ns table
-	with open('%s/dm2ns.lst' % wDir, 'r') as iFile:
-		rows = csv.reader(iFile, delimiter=',')
-		con.executemany("INSERT INTO dm2ns VALUES (?, ?)", rows)
-
-	## Insert ns2dm table
-	with open('%s/ns2dm.lst' % wDir, 'r') as iFile:
-		rows = csv.reader(iFile, delimiter=',')
-		con.executemany("INSERT INTO ns2dm VALUES (?, ?)", rows)
-
-	## Insert scanned table
-	mFile = open('nTgts.lst', 'r')
-	while True:
-		mRow = mFile.readline().rstrip()
-		if not mRow:
-			break
-		db.execute("INSERT INTO scanned VALUES(?);", (mRow,))
-	mFile.close()
-
+	## Insert Tables
+	dColumn('%s/dm2ns.lst' % wDir, 'dm2ns')
+	dColumn('%s/ns2dm.lst' % wDir, 'ns2dm')
+	sColumn('nTgts.lst', 'scanned')
+	sColumn('%s/domains.lst' % wDir, 'domains')
+	sColumn('%s/nameservers.lst' % wDir, 'nameservers')
 
 '''
 CLEANUP
