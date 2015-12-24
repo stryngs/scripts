@@ -23,12 +23,8 @@ with open(nFile, 'r') as iFile:
 	for i in new:
 		nSet.add(i.strip())
 
-## Compare the sets, and remove old from new
-tList = []
-for i in nSet - pSet:
-	tList.append(i.strip())
-
-## Create a file of non-dug domains
+## Compare the sets, and remove old from new creating a set of non-dug domains
 with open ('nTgts.lst', 'w') as oFile:
-	for i in tList:
-		oFile.write(i + '\n')
+	for i in nSet - pSet:
+		oFile.write(i.strip() + '\n')
+
