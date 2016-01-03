@@ -269,7 +269,7 @@ while read file; do
 	## Create a file if the domain doesn't have a Nameserver
 	fSize=$(wc -l $file\_NS-LIST | awk '{ print $1}')
 	if [[ $fSize -eq 0 ]]; then
-		echo $file > $basedir/NoNS.lst
+		echo $file >> $basedir/NoNS.lst
 	fi
 
 	## Display the nameservers
