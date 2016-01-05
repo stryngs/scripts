@@ -8,6 +8,9 @@
 ## Create the comparisons to prevent re-digging
 oFile = raw_input("List of domains previously scanned?\n")
 nFile = raw_input("List of domains to scan?\n")
+tFile = raw_input("Output File? [nTgts.lst]\n")
+if not tFile:
+	tFile = 'nTgts.lst'
 
 ## Create a set of pre-dug
 pSet = set()
@@ -24,7 +27,7 @@ with open(nFile, 'r') as iFile:
 		nSet.add(i.strip())
 
 ## Compare the sets, and remove old from new creating a set of non-dug domains
-with open ('nTgts.lst', 'w') as oFile:
+with open (tFile, 'w') as oFile:
 	for i in nSet - pSet:
 		oFile.write(i.strip() + '\n')
 
