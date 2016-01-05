@@ -118,11 +118,11 @@ ns2dmFile = open('%s/ns2dm.lst' % wDir, 'w')
 nameserversFile = open('%s/nameservers.lst' % wDir, 'w')
 for domain in dList:
 	nsList = os.listdir('%s/%s' % (dDir, domain))
-	domainsFile.write('%s' % (domain) + '\n')
+	domainsFile.write('%s' % (domain.lower()) + '\n')
 	for ns in nsList:
-		dm2nsFile.write('%s,%s' % (domain, ns) + '\n')
-		ns2dmFile.write('%s,%s' % (ns, domain) + '\n')
-		nameserversFile.write('%s' % (ns) + '\n')
+		dm2nsFile.write('%s,%s' % (domain.lower(), ns.lower()) + '\n')
+		ns2dmFile.write('%s,%s' % (ns.lower(), domain.lower()) + '\n')
+		nameserversFile.write('%s' % (ns.lower()) + '\n')
 dm2nsFile.close()
 ns2dmFile.close()
 domainsFile.close()
@@ -158,8 +158,8 @@ with con:
 		row = aFile.readline().rstrip()
 		if not row:
 			break
-		dmRow = row.split()[0]
-		ownRow = row.split()[1]
+		dmRow = row.split()[0].lower()
+		ownRow = row.split()[1].lower()
 		ttlRow = row.split()[2]
 		rrRow = row.split()[4]
 		data = row.split()[5:]
