@@ -38,5 +38,9 @@
 ## quickset
 * A quick way to implement MITM style attacks for wired or wireless scenarios
 
+## sotf
+* Secrecy on the fly
+* A very high level usage of crypto implemented for shell or IRC based chat.
+
 ## surfpwn.sh
 * Motorola SBG6580 bruteforce password decoder
