@@ -35,6 +35,9 @@
 ## mx-rip
 * Rip MX record for a given set of email addresses and do something with it...
 
+## obfume
+* Create an obfuscated payload
+
 ## quickset
 * A quick way to implement MITM style attacks for wired or wireless scenarios
 

