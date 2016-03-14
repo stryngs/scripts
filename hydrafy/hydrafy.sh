@@ -1,115 +1,5 @@
 #!/bin/bash
-script_info--()
-{
-##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Filename: hydrafy.sh
-## Copyright (C) <2012>  <stryngs>
 
-## This program is free software: you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or
-## (at your option) any later version.
-
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-
-## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## This script was written with the intent for Legal PenTesting uses only.
-## Make sure that you have consent prior to use on a device other than your own.
-## Doing so without the above is a violation of Federal/State Laws within the United States of America.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##_____________________________________________________________________________##
-## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
-
-## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info [at] ethicalreporting.org
-
-## Comments written with a triple # are notes to myself, please ignore them.
-##_____________________________________________________________________________##
-
-
-##~The Following Required Programs Must be in Your Path for Full Functionality~##
-## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.  Odds favor that they will be in /usr/bin or some other location readily available in your path...
-
-## hydra
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## If you know of a router/username/password that is not included in database.csv, please make the appropriate changes to spread.ods and I will update as requested.  Make sure that if a username or password is "n/a", "blank", "none" or etc, that you leave it blank in the update request.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Configure a protocol check function to prevent improper syntax
-## Figure out which protocols require the -U option for usage.
-## Implement the -S flag for use with SSL, otherwise https probably won't work??
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## There is now an option for -C -or- -L and -P with reference to methodology of attack
-
-
-## database.csv has been parsed for duplicate values and I have removed as many of them as I could find.
-
-
-## On 5 April 2012, rtr_check--() was implemented.  Hopefully this will help to grow database.csv.
-
-
-## As of 25 September 2012, the option for multiple protocol attacks were implemented.
-## HydraFy has finally been ported over for usage on the N900!
-## install_hydrafy_n900.sh file movements/creations:  ## For those who are curious what the file does, as it deletes itself...
-	## /opt/usr/share/pixmaps/hydrafy_icon.png
-	## /usr/bin/hydrafy.sh
-	## /usr/share/applications/hildon/hydrafy.desktop
-	## /home/user/MyDocs/pwnphone/hydrafy
-
-## On 6 November 2012, a function to parse against the OUI of the currently connected router (if it existed) was added.
-## This will add a great deal of speed to the functionality of hydrafy.
-## Warning to the user on this:  The IEEE list is "skewed" at best, so ensure that you take the time to think about what you type in for parsing purposes once hydrafy asks you, typing it in exactly as the output shows for the above function is "dicey" at best...
-
-## Updating of the OUI list has been added in as functionality
-
-## On 4 April 2013, the original master spreadsheet was converted into csv format for easier updating and such
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## First and foremost, to God above for giving me the abilities I have, Amen.
-
-## @Kos for forcing me to learn some regex
-
-## @The_Eccentric for reigniting the spark to publish this script
-
-## TAPE for making me look deper into regex and pointing out the 360+ duplicate usernames and passwords within database.csv
-
-## Deviney for some of the ideas in atk_mth--(), the ideas behind protocol--() and list_protocol--()s
-
-## foremost on the #maemo (freenode) for making me check into sudo...evidently route aint in the path, and ya gotz to sudo....  Thank buddy.
-
-## JohnnyBom for having me explain some bash ninjitsu and stumblin upon an error in usage--()
-
-## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-sleep 0
-}
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 usage--()
 {
@@ -595,3 +485,115 @@ fi
 	declare--
 fi
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+script_info--()
+{
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: hydrafy.sh
+## Copyright (C) <2012>  <stryngs>
+
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##_____________________________________________________________________________##
+## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
+
+## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info [at] ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##_____________________________________________________________________________##
+
+
+##~The Following Required Programs Must be in Your Path for Full Functionality~##
+## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.  Odds favor that they will be in /usr/bin or some other location readily available in your path...
+
+## hydra
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## If you know of a router/username/password that is not included in database.csv, please make the appropriate changes to spread.ods and I will update as requested.  Make sure that if a username or password is "n/a", "blank", "none" or etc, that you leave it blank in the update request.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Configure a protocol check function to prevent improper syntax
+## Figure out which protocols require the -U option for usage.
+## Implement the -S flag for use with SSL, otherwise https probably won't work??
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## There is now an option for -C -or- -L and -P with reference to methodology of attack
+
+
+## database.csv has been parsed for duplicate values and I have removed as many of them as I could find.
+
+
+## On 5 April 2012, rtr_check--() was implemented.  Hopefully this will help to grow database.csv.
+
+
+## As of 25 September 2012, the option for multiple protocol attacks were implemented.
+## HydraFy has finally been ported over for usage on the N900!
+## install_hydrafy_n900.sh file movements/creations:  ## For those who are curious what the file does, as it deletes itself...
+	## /opt/usr/share/pixmaps/hydrafy_icon.png
+	## /usr/bin/hydrafy.sh
+	## /usr/share/applications/hildon/hydrafy.desktop
+	## /home/user/MyDocs/pwnphone/hydrafy
+
+## On 6 November 2012, a function to parse against the OUI of the currently connected router (if it existed) was added.
+## This will add a great deal of speed to the functionality of hydrafy.
+## Warning to the user on this:  The IEEE list is "skewed" at best, so ensure that you take the time to think about what you type in for parsing purposes once hydrafy asks you, typing it in exactly as the output shows for the above function is "dicey" at best...
+
+## Updating of the OUI list has been added in as functionality
+
+## On 4 April 2013, the original master spreadsheet was converted into csv format for easier updating and such
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## @Kos for forcing me to learn some regex
+
+## @The_Eccentric for reigniting the spark to publish this script
+
+## TAPE for making me look deper into regex and pointing out the 360+ duplicate usernames and passwords within database.csv
+
+## Deviney for some of the ideas in atk_mth--(), the ideas behind protocol--() and list_protocol--()s
+
+## foremost on the #maemo (freenode) for making me check into sudo...evidently route aint in the path, and ya gotz to sudo....  Thank buddy.
+
+## JohnnyBom for having me explain some bash ninjitsu and stumblin upon an error in usage--()
+
+## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+sleep 0
+}
