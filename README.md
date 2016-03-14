@@ -8,14 +8,6 @@
 ## CookieJack.sh
 * An ingenious method for looping webpages to infinity and beyond using a simple iframe
 
-## DNS
-* dig-em
-  * Aids a user in performing a varied number of DNS Nameserver tests in a quick and efficient manner
-* cdig
-  * Helps the user to compare dig lists
-* bdig
-  * Helps the user to build a sqlite database based around dig-em results
-
 ## email-em
 * Send an email via the command line
 
