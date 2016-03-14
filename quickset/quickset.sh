@@ -1,155 +1,4 @@
 #!/bin/bash
-function script_info(){
-##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Filename: quickset.sh
-## Copyright (C) <2009>  <stryngs>
-
-##  This program is free software: you can redistribute it and/or modify
-##  it under the terms of the GNU General Public License as published by
-##  the Free Software Foundation, either version 3 of the License, or
-##  (at your option) any later version.
-
-##  This program is distributed in the hope that it will be useful,
-##  but WITHOUT ANY WARRANTY; without even the implied warranty of
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##  GNU General Public License for more details.
-
-##  You should have received a copy of the GNU General Public License
-##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## This script was written with the intent for Legal PenTesting uses only.
-## Make sure that you have consent prior to use on a device other than your own.
-## Doing so without the above is a violation of Federal/State Laws within the United States of America.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##_____________________________________________________________________________##
-## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
-
-## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info [at] ethicalreporting.org
-
-## Comments written with a triple # are notes to myself, please ignore them.
-##_____________________________________________________________________________##
-
-
-##~The Following Required Programs Must be in Your Path for Full Functionality~##
-## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.  Odds favor that they will be in /usr/bin or some other location readily available in your path...
-## macchanger
-## Hamster & Ferret
-## sslstrip
-## arpspoof
-## aircrack-ng suite
-## dhcpd3-server
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## WOULD LIKE TO IMPLEMENT MORE FAST ACTING ATTACK TOOLS THAT REQUIRE LITTLE TO NO SETUP.  If you have a tool you would like added to this script please contact me
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Implementation of ip_mac-- for MAC address checking
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Add option to delete the files created by aircrack-ng during usage of wifi_101--()
-
-## Implementation of IP check functionality for multiple tgts on arpspoof_II--() and custom dns entries on dhcp_svr--()
-
-## ip_mac--() needs to be vetted to where it will only accept four octects.  As of now, it does proper checking with regards to 0-255, however it will let ANY amount of octects pass -vs- the proper usage of four octects
-
-## Tweak up wacg--() to allow for a null victim mac entry to exit out of the function and the pause that would follow otherwise..,
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Past notes are within wifi_101.sh <Version 1.5 (FINAL)>
-## To grab a deprecated copy of wifi_101.sh do: svn checkout http://wifi-101.googlecode.com/svn/trunk wifi_101
-
-## If you have devices listed as ath0 or something other than wlan or mon, you will have to make appropriate changes to the naming and monitormode functions
-
-## $var is a recycled variable throughout the script.  $parent is a variable declaring where a function is called from.
-
-## One of the tougher parts of designing this script was weighing in on which programs to include, originally I had decided to implement a KarMetasploit attack.  I later decided against it; instead deciding to focus on smaller programs; with the thought concept that this script is not meant to be an all encompassing tool, but one designed to setup "Quick Fixes".....
-
-## For Functions within Functions (sub-functions), I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
-
-## As of version 0.9, the old "Amplification Mode" has been removed.  It was more of a multiplication technique.
-## With the advent of version 1.3 a proper technique for ARP amplification has been added in that will allow the user to do advanced Packet Forging thereby creating real amplification methods.
-
-## As of version 1.5, the option for Automatic WEP attacks has been removed.  I wanted to keep it in, but there are so many variables with respect towards WEP cracking that until a GUI option for quickset exists, it will not be feasible to have this option.
-
-## init_setup--() has been clarified.  The old menu was very confusing with regards to creating variables for NIC names, enabling monitor mode, etc...  The new menu is a lot more "user" friendly 
-
-##  On 2 Jan 2012, no_dev--() was implemented to speed up NIC naming, whereby if a user had neglected to name NICs during the initial setup; it would not slow them down later on.
-
-## On 7 January 2012, Eterm replaced xterm.  This is a much slicker program.
-
-## On 27 January 2012, an IP address check function was implemented to ensure that a valid IP address exists for IP address variables.  This still has some work to do to it regarding making sure it has 4 octets and 4 octets only.  This will surely be implemented later on.
-
-## On 20 February 2012, the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
-##As well, quickset.sh was opened to the world with respect towards allowed frequencies for WiFi.  quickset.sh will now allow a user to choose channels 1-14, versus the old way of using only 1-11.  Be advised though, I do not feel like writing a check function to make sure yer regulatory agent allows a specific channel.  It is up to you to set the regulatory agent via iw prior to choosing a channel.  ie...  If you have an american laptop, by default, channel 1-11 will be available to you.  Trying to choose channel 12 will probably result in a failure of quickset.sh of some type, not sure and do not care enough to figure this out right now.  Just make sure you have set it prior to using quickset.sh and you will be good to go.
-
-## On 20 March 2012, quickset.sh once again became an even numbered version indicating to users that all known bugs have been worked out with the previous bug caused by the addition of a function allowing for implementation of using custom DNS servers with dhcp3-server!  It's still not perfect sailing as I have not implemented the ip_mac--() function into this just yet, the user could still jack this up, but I will implement this when I get the time.
-
-## As of 3.4:
-## A channel checking feature was implemented to speed up the users decision with regards to channel switching
-## An internet connectivity and monitor mode check was implemented during startup 
-## dnsspoof has been given the ability to use custom hosts for the configuration file
-## When using wacg--(), you must have a victim MAC to enter in, otherwise the script will pause.  In other words, do not (C)ontinue if there is not a vic to choose from...
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Airbase-NG usage results in an iPhone constantly reassociating every minute on the minute
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## First and foremost, to God above for giving me the abilities I have, Amen.
-
-## My main scripting style is derived from carlos_perez@darkoperator.com
-## Credit for some of the routing features in this script to him as well
-
-## Grant Pearson:
-## For having me RTFM with xterm debugging
-
-## comaX:
-## Showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
-## Credit for the variable parser within mass_arp--()
-
-## ShadowMaster:
-## Showing me the error of my ways with what I thought was "ARP Amplification".
-## Due to his thoughts on the matter, I have completly rewritten the wifi_101--() portion of this script.
-
-## melissabubble:
-## Informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
-## Props on finding the "Enable Monitor Mode" bug.  I'm not sure if that was in previous versions and darn sure to feel like trying to find out.  Either way, darn fine job finding it and pointing it out.  Using the wrong NIC could have had "serious" consequences depending on the situation of a pentest.
-
-## VulpiArgenti:
-## Recommending the idea of an auto-implementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
-## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.  Eventually this check will be implemented in all quickset.sh functions that should require the usage thereof...
-## For giving me the idea to allow channels 12-14 with respect to wifi capabilities.  I had always used US channels in the past, but why not open this up to other channels.....
-## For the rockin syntax with respect to Enabling Monitor Mode by grepping out airmon-ng's output to enter the variable automatically.  This saved some time with respect to the quick in quickset, nice job!
-## Mad credit goes into the idea for keeping the "quick" in quickset by having the script call for the NICs MAC address ahead of time with regards to source MAC for some of the attacks.  When I first read the post, I was a little lost, and disregarded this idea for quite some time.  It wasn't until around a month later that I realized the genius behind the idea and scripted something up.  Props my friend, props....
-## I have now "implemented" your color coding scheme from PwnSTAR.  The old way I did things was painful.  It rocks hard for the visualization of ANSI layout and it helped me to catch some symetrics errors.  Nice job...
-
-## bugme:
-## Catching the hamster bug whereby if hamster.txt existed, the script just quit out.  Thanks!
-
-## b33f:
-## Much of the wacg--() functionality is straight from the WACg.sh script, I mostly tweaked how the function flows within itself for my script's purposes.  All the credit for the idea itself goes straight to b33f.  Mad Props and Kudos...
-
-## My wife:
-## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-sleep 0
-}
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Repitious Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~##
 usage--()
@@ -3768,3 +3617,156 @@ else
 	usage--
 fi
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+function script_info(){
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: quickset.sh
+## Copyright (C) <2009>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##_____________________________________________________________________________##
+## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
+
+## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info [at] ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##_____________________________________________________________________________##
+
+
+##~The Following Required Programs Must be in Your Path for Full Functionality~##
+## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.  Odds favor that they will be in /usr/bin or some other location readily available in your path...
+## macchanger
+## Hamster & Ferret
+## sslstrip
+## arpspoof
+## aircrack-ng suite
+## dhcpd3-server
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## WOULD LIKE TO IMPLEMENT MORE FAST ACTING ATTACK TOOLS THAT REQUIRE LITTLE TO NO SETUP.  If you have a tool you would like added to this script please contact me
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Implementation of ip_mac-- for MAC address checking
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Add option to delete the files created by aircrack-ng during usage of wifi_101--()
+
+## Implementation of IP check functionality for multiple tgts on arpspoof_II--() and custom dns entries on dhcp_svr--()
+
+## ip_mac--() needs to be vetted to where it will only accept four octects.  As of now, it does proper checking with regards to 0-255, however it will let ANY amount of octects pass -vs- the proper usage of four octects
+
+## Tweak up wacg--() to allow for a null victim mac entry to exit out of the function and the pause that would follow otherwise..,
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Past notes are within wifi_101.sh <Version 1.5 (FINAL)>
+## To grab a deprecated copy of wifi_101.sh do: svn checkout http://wifi-101.googlecode.com/svn/trunk wifi_101
+
+## If you have devices listed as ath0 or something other than wlan or mon, you will have to make appropriate changes to the naming and monitormode functions
+
+## $var is a recycled variable throughout the script.  $parent is a variable declaring where a function is called from.
+
+## One of the tougher parts of designing this script was weighing in on which programs to include, originally I had decided to implement a KarMetasploit attack.  I later decided against it; instead deciding to focus on smaller programs; with the thought concept that this script is not meant to be an all encompassing tool, but one designed to setup "Quick Fixes".....
+
+## For Functions within Functions (sub-functions), I have found that I like to declare my variables for use within a function at the beginning of the function, then I list my sub-functions, at the end of the sub-functions you will find the parent functions commands.  It may be a strange way to do it, but it works for my readability purposes.
+
+## As of version 0.9, the old "Amplification Mode" has been removed.  It was more of a multiplication technique.
+## With the advent of version 1.3 a proper technique for ARP amplification has been added in that will allow the user to do advanced Packet Forging thereby creating real amplification methods.
+
+## As of version 1.5, the option for Automatic WEP attacks has been removed.  I wanted to keep it in, but there are so many variables with respect towards WEP cracking that until a GUI option for quickset exists, it will not be feasible to have this option.
+
+## init_setup--() has been clarified.  The old menu was very confusing with regards to creating variables for NIC names, enabling monitor mode, etc...  The new menu is a lot more "user" friendly 
+
+##  On 2 Jan 2012, no_dev--() was implemented to speed up NIC naming, whereby if a user had neglected to name NICs during the initial setup; it would not slow them down later on.
+
+## On 7 January 2012, Eterm replaced xterm.  This is a much slicker program.
+
+## On 27 January 2012, an IP address check function was implemented to ensure that a valid IP address exists for IP address variables.  This still has some work to do to it regarding making sure it has 4 octets and 4 octets only.  This will surely be implemented later on.
+
+## On 20 February 2012, the ranges for MTU value have been confirmed to be between 42 - 6122.  This check feature has now been fully implemented.
+##As well, quickset.sh was opened to the world with respect towards allowed frequencies for WiFi.  quickset.sh will now allow a user to choose channels 1-14, versus the old way of using only 1-11.  Be advised though, I do not feel like writing a check function to make sure yer regulatory agent allows a specific channel.  It is up to you to set the regulatory agent via iw prior to choosing a channel.  ie...  If you have an american laptop, by default, channel 1-11 will be available to you.  Trying to choose channel 12 will probably result in a failure of quickset.sh of some type, not sure and do not care enough to figure this out right now.  Just make sure you have set it prior to using quickset.sh and you will be good to go.
+
+## On 20 March 2012, quickset.sh once again became an even numbered version indicating to users that all known bugs have been worked out with the previous bug caused by the addition of a function allowing for implementation of using custom DNS servers with dhcp3-server!  It's still not perfect sailing as I have not implemented the ip_mac--() function into this just yet, the user could still jack this up, but I will implement this when I get the time.
+
+## As of 3.4:
+## A channel checking feature was implemented to speed up the users decision with regards to channel switching
+## An internet connectivity and monitor mode check was implemented during startup 
+## dnsspoof has been given the ability to use custom hosts for the configuration file
+## When using wacg--(), you must have a victim MAC to enter in, otherwise the script will pause.  In other words, do not (C)ontinue if there is not a vic to choose from...
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Airbase-NG usage results in an iPhone constantly reassociating every minute on the minute
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## My main scripting style is derived from carlos_perez@darkoperator.com
+## Credit for some of the routing features in this script to him as well
+
+## Grant Pearson:
+## For having me RTFM with xterm debugging
+
+## comaX:
+## Showing me how much easier it is to follow conditional statements if blank spaces are added in.  This comes in really handy with editors like Kate with folding markers shown.
+## Credit for the variable parser within mass_arp--()
+
+## ShadowMaster:
+## Showing me the error of my ways with what I thought was "ARP Amplification".
+## Due to his thoughts on the matter, I have completly rewritten the wifi_101--() portion of this script.
+
+## melissabubble:
+## Informing me about the "The Wireless Vaccuum" and "WiFi Range Extender" not working properly.  After careful study of the functions I came to the conclusion listed under the "Development Notes" up top.
+## Props on finding the "Enable Monitor Mode" bug.  I'm not sure if that was in previous versions and darn sure to feel like trying to find out.  Either way, darn fine job finding it and pointing it out.  Using the wrong NIC could have had "serious" consequences depending on the situation of a pentest.
+
+## VulpiArgenti:
+## Recommending the idea of an auto-implementing needed requirements for functions such as "Wireless Vaccuum" whereby packet forwarding is needed at the Kernel Level.
+## After much thought and deliberation, I implemented a check that will ask the user if they would like to turn on said named feature prior to proceeding.  Eventually this check will be implemented in all quickset.sh functions that should require the usage thereof...
+## For giving me the idea to allow channels 12-14 with respect to wifi capabilities.  I had always used US channels in the past, but why not open this up to other channels.....
+## For the rockin syntax with respect to Enabling Monitor Mode by grepping out airmon-ng's output to enter the variable automatically.  This saved some time with respect to the quick in quickset, nice job!
+## Mad credit goes into the idea for keeping the "quick" in quickset by having the script call for the NICs MAC address ahead of time with regards to source MAC for some of the attacks.  When I first read the post, I was a little lost, and disregarded this idea for quite some time.  It wasn't until around a month later that I realized the genius behind the idea and scripted something up.  Props my friend, props....
+## I have now "implemented" your color coding scheme from PwnSTAR.  The old way I did things was painful.  It rocks hard for the visualization of ANSI layout and it helped me to catch some symetrics errors.  Nice job...
+
+## bugme:
+## Catching the hamster bug whereby if hamster.txt existed, the script just quit out.  Thanks!
+
+## b33f:
+## Much of the wacg--() functionality is straight from the WACg.sh script, I mostly tweaked how the function flows within itself for my script's purposes.  All the credit for the idea itself goes straight to b33f.  Mad Props and Kudos...
+
+## My wife:
+## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+sleep 0
+}

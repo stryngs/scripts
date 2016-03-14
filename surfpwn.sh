@@ -1,147 +1,5 @@
 #!/usr/bin/env bash
 
-script_info--()
-{
-##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Filename: surfpwn.sh
-## Copyright (C) <2012>  <stryngs>
-
-##  This program is free software: you can redistribute it and/or modify
-##  it under the terms of the GNU General Public License as published by
-##  the Free Software Foundation, either version 3 of the License, or
-##  (at your option) any later version.
-
-##  This program is distributed in the hope that it will be useful,
-##  but WITHOUT ANY WARRANTY; without even the implied warranty of
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##  GNU General Public License for more details.
-
-##  You should have received a copy of the GNU General Public License
-##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## This script was written with the intent for Legal PenTesting uses only.ls
-## Make sure that you have consent prior to use on a device other than your own.
-## Doing so without the above is a violation of Federal/State Laws within the United States of America.
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##_____________________________________________________________________________##
-## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
-
-## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info@ethicalreporting.org
-
-## Comments written with a triple # are notes to myself, please ignore them.
-##_____________________________________________________________________________##
-
-
-##~The Following Required Programs Should be in Your Path for Full Functionality~##
-## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.
-## wpa_passphrase
-## wpa_supplicant
-## crunch
-## pyrit
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Would love to make brute--() faster ...  Probably need more capable language ~~~> C++ anyone?
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Add double NIC usage capability cutting the time to finish the full bruteforce by half
-## The engine is already written for this, but Process ID #s are the issue as the current way I am doing PID tracking kills the script not the action of wpa_supplicant
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## This script was written as a proof of concept to show an inherit weakness in the Surfboard Modem/Router combos rented out by Time Warner in the Southern California Area (Nationwide now perhaps????).
-
-## The main idea behind surfpwn.sh is that the company has three flaws with this specific device:
-## 1) WiFi is on by default
-## 2) WPS is enabled by default
-## 3) The default password for the WiFi is a combination of the 1st seven letters of the ESSID, the 4th and 5th byte of the HFC MAC address (JackAss Value), and the last 2 characters of the ESSID.  It's bad enough when you BROADCAST parts of the password, let alone make it easy as all get out to BRUTEFORCE......
-## I have checked multiple routers to ensure the math would be correct with regards to possible values.  After doing this and seeing my theory was correct, I decided to write surfpwn.sh
-## The weakness in the WiFi password to where brute forcing is "doable" is that the JackAss Value only has 16 possible combinations: 0-9 && A-F <Based off hex>
-## 16^4=65536 possible combinations for any device
-
-## So you might wonder how is this any different than someone hooking up a linksys router in their home?
-## Time Warner doesnt bother to tell the customer that the "modem" they are installing is really a WiFi Router/Modem combo.
-## It would be one thing if they advertised this point blank to the customer, but they fail to do so.
-## When you go to the store and purchase a router, you (for the most part we hope) know if it is a wired or wireless type.  If it is wireless it becomes YOUR responsibility to ensure it's security.
-
-## I happened to be at work when the TW guy came and installed it.  My wife asked him about our router, and he happily hooked our router into the TW "modem".
-## It would have been somewhat understandable if he would have mentioned to her that we didn't need our old router because the device he had hooked up was wireless anyways  >>>  FAIL
-
-##  The hardest part about writing surfpwn.sh was creating an engine to run/kill wpa_supplicant accordingly.  I don't believe anything exists in the wild that does this.  It was a good experience for me learning to truly think outside the box and envision how to accomplish a new goal.
-
-## On 12 July 2014, I made the decision to move fully to crunch (sweeter on the syntactic sugar side of things) for list creation.  The steps below have been kept for historical purposes.
-## step 1 - define variables for dictionary building
-##x=`echo $essid | cut -c-7` ## 1st part of psk is 1st 7 characters of essid
-##z=`echo $essid | cut -c8-` ## last 2 characters of psk is last 2 characters of essid
-
-## step 2 - create 1st part of psk in a file equivilent in length to $idiot
-## counter=0
-## rm  -rf $work_dir/first > /dev/null 2>&1
-## while [[ $counter -lt 65536 ]];do echo $x >> $work_dir/first; let counter++; done
-
-## step 3 - create last part of psk in a file equivilent in length to $idiot
-## counter=0
-## rm -rf $work_dir/last > /dev/null 2>&1
-## while [[ $counter -lt 65536 ]];do echo $z >> $work_dir/last; let counter++; done
-
-## step 4 - lets get crunchy and create the middle part of the psk in a file based off of 0-9 and A-F to $idiot
-## rm -rf $work_dir/middle > /dev/null 2>&1
-## crunch 4 4 0123456789ABCDEF -o $work_dir/middle
-## reset
-
-## step 5 - create the full psk file for our engine
-## paste $work_dir/first $work_dir/middle $work_dir/last | tr -d '\011' > $work_dir/twpwn_psk
-
-## step 5a - process multiple interfaces, must alter list, will do something cleaner later..
-### Should use split and not tac.....
-# case $mult in
-# 	y|Y) tac ~/twpwn_psk > psk_twpwn;;
-# esac
-
-## step 6 - some house cleaning
-## rm -rf $work_dir/first $work_dir/middle $work_dir/last > /dev/null 2>&1
-
-## Something to ask yourself:
-## WHY did Time Warner demand to Arris/Motorola that they install a backdoor to the webbased login of: technician:yZgO8Bvj
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Changing of $sleep to too low will result in errors, adjust accordingly to your system and distance to the AP
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-
-
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## First and foremost, to God above for giving me the abilities I have, Amen.
-
-## My wife:
-## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
-
-## darkoperator:
-## I derived my scripting style from him
-
-## Awk:
-## For taking the time to listen to me about the idea when suddenly the answer popped up.  Crazy how just having someone listen can provide an answer sometimes....
-
-## dragorn:
-## Listening to me one day about the hack, and informing me that I could use a dictionary attack against it.  I can't remember exactly how the conversation went, but he was right.  It took my ~18 hr hack down to 13 seconds!!!
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-sleep 0
-}
-
 ##~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN Starting Functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 envir--()
 {
@@ -414,3 +272,146 @@ else
 	exit 1
 fi
 ##~~~~~~~~~~~~~~~~~~~~~~~~~ END Launch Conditions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+script_info--()
+{
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: surfpwn.sh
+## Copyright (C) <2012>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.ls
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##_____________________________________________________________________________##
+## Prior to usage, I ask that you take the time to read fully through the script to understand the dynamics of the script.  Don't just be a $cr!pt K!dd!3 here; actually understand what it is that you are doing.
+
+## I consider any script/program I write to always be a work in progress.  Please send any tips/tricks/streamlining ideas/comments/kudos via email to info@ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##_____________________________________________________________________________##
+
+
+##~The Following Required Programs Should be in Your Path for Full Functionality~##
+## This was decided as the de facto standard versus having the script look in locations for the programs themselves with the risk of them not being there.
+## wpa_passphrase
+## wpa_supplicant
+## crunch
+## pyrit
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Requested Help ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Would love to make brute--() faster ...  Probably need more capable language ~~~> C++ anyone?
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~ Planned Implementations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Add double NIC usage capability cutting the time to finish the full bruteforce by half
+## The engine is already written for this, but Process ID #s are the issue as the current way I am doing PID tracking kills the script not the action of wpa_supplicant
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ To Do ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Development Notes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written as a proof of concept to show an inherit weakness in the Surfboard Modem/Router combos rented out by Time Warner in the Southern California Area (Nationwide now perhaps????).
+
+## The main idea behind surfpwn.sh is that the company has three flaws with this specific device:
+## 1) WiFi is on by default
+## 2) WPS is enabled by default
+## 3) The default password for the WiFi is a combination of the 1st seven letters of the ESSID, the 4th and 5th byte of the HFC MAC address (JackAss Value), and the last 2 characters of the ESSID.  It's bad enough when you BROADCAST parts of the password, let alone make it easy as all get out to BRUTEFORCE......
+## I have checked multiple routers to ensure the math would be correct with regards to possible values.  After doing this and seeing my theory was correct, I decided to write surfpwn.sh
+## The weakness in the WiFi password to where brute forcing is "doable" is that the JackAss Value only has 16 possible combinations: 0-9 && A-F <Based off hex>
+## 16^4=65536 possible combinations for any device
+
+## So you might wonder how is this any different than someone hooking up a linksys router in their home?
+## Time Warner doesnt bother to tell the customer that the "modem" they are installing is really a WiFi Router/Modem combo.
+## It would be one thing if they advertised this point blank to the customer, but they fail to do so.
+## When you go to the store and purchase a router, you (for the most part we hope) know if it is a wired or wireless type.  If it is wireless it becomes YOUR responsibility to ensure it's security.
+
+## I happened to be at work when the TW guy came and installed it.  My wife asked him about our router, and he happily hooked our router into the TW "modem".
+## It would have been somewhat understandable if he would have mentioned to her that we didn't need our old router because the device he had hooked up was wireless anyways  >>>  FAIL
+
+##  The hardest part about writing surfpwn.sh was creating an engine to run/kill wpa_supplicant accordingly.  I don't believe anything exists in the wild that does this.  It was a good experience for me learning to truly think outside the box and envision how to accomplish a new goal.
+
+## On 12 July 2014, I made the decision to move fully to crunch (sweeter on the syntactic sugar side of things) for list creation.  The steps below have been kept for historical purposes.
+## step 1 - define variables for dictionary building
+##x=`echo $essid | cut -c-7` ## 1st part of psk is 1st 7 characters of essid
+##z=`echo $essid | cut -c8-` ## last 2 characters of psk is last 2 characters of essid
+
+## step 2 - create 1st part of psk in a file equivilent in length to $idiot
+## counter=0
+## rm  -rf $work_dir/first > /dev/null 2>&1
+## while [[ $counter -lt 65536 ]];do echo $x >> $work_dir/first; let counter++; done
+
+## step 3 - create last part of psk in a file equivilent in length to $idiot
+## counter=0
+## rm -rf $work_dir/last > /dev/null 2>&1
+## while [[ $counter -lt 65536 ]];do echo $z >> $work_dir/last; let counter++; done
+
+## step 4 - lets get crunchy and create the middle part of the psk in a file based off of 0-9 and A-F to $idiot
+## rm -rf $work_dir/middle > /dev/null 2>&1
+## crunch 4 4 0123456789ABCDEF -o $work_dir/middle
+## reset
+
+## step 5 - create the full psk file for our engine
+## paste $work_dir/first $work_dir/middle $work_dir/last | tr -d '\011' > $work_dir/twpwn_psk
+
+## step 5a - process multiple interfaces, must alter list, will do something cleaner later..
+### Should use split and not tac.....
+# case $mult in
+# 	y|Y) tac ~/twpwn_psk > psk_twpwn;;
+# esac
+
+## step 6 - some house cleaning
+## rm -rf $work_dir/first $work_dir/middle $work_dir/last > /dev/null 2>&1
+
+## Something to ask yourself:
+## WHY did Time Warner demand to Arris/Motorola that they install a backdoor to the webbased login of: technician:yZgO8Bvj
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~## 
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Bug Traq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Changing of $sleep to too low will result in errors, adjust accordingly to your system and distance to the AP
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## My wife:
+## For always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking
+
+## darkoperator:
+## I derived my scripting style from him
+
+## Awk:
+## For taking the time to listen to me about the idea when suddenly the answer popped up.  Crazy how just having someone listen can provide an answer sometimes....
+
+## dragorn:
+## Listening to me one day about the hack, and informing me that I could use a dictionary attack against it.  I can't remember exactly how the conversation went, but he was right.  It took my ~18 hr hack down to 13 seconds!!!
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+sleep 0
+}
