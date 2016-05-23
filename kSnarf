@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+break--()
+{
+echo "** Trapped CTRL-C"
+kill -9 $watch_pid
+kill -9 $sniff_pid
+kill -9 $scent_pid
+}
+
+engine--()
+{
+## Eventually we'll loop.  Not needed for PoC.
+# while true; do
+	echo > ALERT-FILE
+	## Obtain the scent of wifi
+	nice -n -20 tshark -i wlan0 -T fields -E separator=\; -e frame.time -e radiotap.dbm_antsignal -e wlan.sa -e wlan.da -e wlan_mgt.ssid subtype probereq 2>/dev/null > snarf.csv & scent_pid=$!
+
+	sniff-- & sniff_pid=$!
+	sleep 1
+	nice -n -20 inotifywait -e modify ALERT-FILE & watch_pid=$!
+	wait $watch_pid
+	ant_str=$(head -n 1 ALERT-FILE  | cut -d\; -f2 | cut -d\, -f1)
+	clear
+	echo "DEVICE $tgt_mac DETECTED"
+	echo ""
+	echo "Signal Strength at: $ant_str"
+	echo ""
+	echo ""
+	echo ""
+	echo ""
+
+	## $sniff_pid seems to always be doubled
+	let sniff_pid++
+	let sniff_pid++
+
+	kill -9 $sniff_pid
+	kill -9 $scent_pid
+	sleep 2
+# done
+read x
+exit 0
+}
+
+sniff--()
+{
+### We can easily do arguments to sniff--() for different tgts
+tail -f snarf.csv | grep -i --line-buffered "$tgt_mac" > ALERT-FILE
+}
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+trap break-- INT
+rm -rf snarf.csv
+echo "MAC Address to Target?"
+read tgt_mac
+echo ""
+engine--
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~ File and License Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## Filename: kSnarf
+## Copyright (C) <2015>  <stryngs>
+
+##  This program is free software: you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation, either version 3 of the License, or
+##  (at your option) any later version.
+
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Legal Notice ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## This script was written with the intent for Legal PenTesting uses only.
+## Make sure that you have consent prior to use on a device other than your own.
+## Doing so without the above is a violation of Federal/State Laws within the United States of America.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Thoughts... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## I consider any script/program I write to always be a work in progress.
+## Please send any tips/tricks/streamlining ideas/comments/kudos via email to: info [AT] ethicalreporting.org
+
+## Comments written with a triple # are notes to myself, please ignore them.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~ Credits and Kudos ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+## First and foremost, to God above for giving me the abilities I have, Amen.
+
+## Kudos to my wife for always standing by my side, having faith in me, and showing the greatest of patience for my obsession with hacking.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
