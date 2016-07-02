@@ -27,9 +27,6 @@
 * qtip
   * Parse the database from qti and do something with it...
 
-## kSnarf
-* Sniff for specific MAC addresses
-
 ## mx-rip
 * Rip MX record for a given set of email addresses and do something with it...
 
