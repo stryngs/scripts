@@ -5,7 +5,7 @@ class Stopwatch(object):
 
     When this class is instantiated, the default is to create a list for
     tracking of time via a "button press".  To allow for multiple things to be
-    concurrently tracked within the same object, a dictionary object is used.  
+    concurrently tracked within the same object, a dictionary is used.  
     The thought behind the dictionary is to allow for a single instance of the
     Stopwatch class, using a keyword, to track button presses based upon
     that specific keyword.  This alleviates the need for multiple instances to 
