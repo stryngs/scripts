@@ -45,3 +45,7 @@
 
 ## surfpwn.sh
 * Motorola SBG6580 bruteforce password decoder
+
+## wigleEarth
+* Plot out wifi accesspoints using the wigle sqlite database
+
