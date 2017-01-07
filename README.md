@@ -40,5 +40,8 @@
 * Secrecy on the fly
 * A very high level usage of crypto implemented for shell or IRC based chat.
 
+## stopwatch.py
+* Useful time delta stopwatch style module for python.
+
 ## surfpwn.sh
 * Motorola SBG6580 bruteforce password decoder
