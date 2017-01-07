@@ -88,7 +88,6 @@ class Stopwatch(object):
             if kwargs['option'] == 'multi':
                 self.timeKeeper = {}
                 self.clickMonitor = {}
-                #self.dictInstance = {}
             else:
                 self.timeKeeper = []
                 self.clickMonitor = 0
