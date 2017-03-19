@@ -1,0 +1,89 @@
+#!/usr/bin/python
+
+from lxml import etree
+import sqlite3 as lite
+import sys
+
+## Setup the DB
+con = lite.connect('masscan.sqlite')
+con.text_factory = str
+db = con.cursor()
+db.execute('CREATE TABLE IF NOT EXISTS\
+                `ip_list`("endtime" INT,\
+                          "addr" TEXT,\
+                          "addrtype" TEXT,\
+                          "protocol" TEXT,\
+                          "portid" INT,\
+                          "state" TEXT,\
+                          "reason" TEXT,\
+                          "reason_ttl" INT,\
+                          "name" TEXT,\
+                          "banner" TEXT,\
+                          UNIQUE("endtime",\
+                                 "addr",\
+                                 "addrtype",\
+                                 "protocol",\
+                                 "portid",\
+                                 "state",\
+                                 "reason",\
+                                 "reason_ttl",\
+                                 "name",\
+                                 "banner"));')
+
+## Map out the XML
+try:
+    tree = etree.parse(sys.argv[1])
+except:
+    print 'Usage:\npython mParser <masscan results XML file>\n'
+    sys.exit(1)
+root = tree.getroot()
+
+## Notate the data for the individual hosts
+hostList = root.findall('host')
+for i in hostList:
+    endtime = i.attrib.get('endtime')
+    eList = i.iter()
+    eDict = {}
+    for i in eList:
+        eDict.update({i.tag: i})
+    address = eDict.get('address').attrib.get('addr')
+    addrtype = eDict.get('address').attrib.get('addrtype')
+    protocol = eDict.get('port').attrib.get('protocol')
+    portid = eDict.get('port').attrib.get('portid')
+    state = eDict.get('state').attrib.get('state')
+    reason = eDict.get('state').attrib.get('reason')
+    reason_ttl = eDict.get('state').attrib.get('reason_ttl')
+    if eDict.has_key('service'):
+        name = eDict.get('service').attrib.get('name')
+        banner = eDict.get('service').attrib.get('banner')
+    else:
+        name = ''
+        banner = ''
+
+    ## Add the host to DB
+    db.execute('INSERT OR IGNORE INTO\
+                    `ip_list`\
+                VALUES(?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?,\
+                       ?);',\
+                      (endtime,\
+                       address,\
+                       addrtype,\
+                       protocol,\
+                       portid,\
+                       state,\
+                       reason,\
+                       reason_ttl,\
+                       name,\
+                       banner))
+
+## Finalize and close out                
+con.commit()
+con.close()
