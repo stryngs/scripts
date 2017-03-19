@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+"""
+Take the XML results given from masscan and place them into a sqlite3 database
+"""
+
 from lxml import etree
 import sqlite3 as lite
 import sys
