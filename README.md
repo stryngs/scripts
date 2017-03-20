@@ -30,6 +30,9 @@
 ## mParser
 * A sqlite3 parser for massscan XML results
 
+## pyWhois
+* An interesting take on using whois type queries
+
 ## quickset
 * A quick way to implement MITM style attacks for wired or wireless scenarios
 
