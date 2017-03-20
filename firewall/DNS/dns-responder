@@ -1,0 +1,134 @@
+#!/usr/bin/python
+
+"""
+Useful for blocking erroneous DNS queries to a Nameserver
+
+Have to add option for:
+    - while read lines; do line=$(echo "$lines" | cut -d: -f2); iptables -D INPUT -s "$line" -j DROP; done<log.lst
+    
+    - iptables-save | grep DROP | grep -v conntrack > drops; sed -i 's/A/D/g' drops; sed -i 's/\/32//g' drops; while read lines; do iptables $(echo "$lines"); done<drops; rm -f drops
+
+"""
+
+import logging, os, subprocess, sys, time
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+from scapy.all import *
+from shlex import split
+
+class Tee(object):
+    """Python Tee implementation"""
+    def __init__(self, _fd1, _fd2) :
+        self.fd1 = _fd1
+        self.fd2 = _fd2
+
+
+    def __del__(self) :
+        if self.fd1 != sys.stdout and self.fd1 != sys.stderr :
+            self.fd1.close()
+        if self.fd2 != sys.stdout and self.fd2 != sys.stderr :
+            self.fd2.close()
+
+
+    def write(self, text) :
+        self.fd1.write(text)
+        self.fd2.write(text)
+
+
+    def flush(self) :
+        self.fd1.flush()
+        self.fd2.flush()
+
+
+def packetParser():
+    """Prevent DNS queries that should not occur"""
+    #global logCounter
+    def engine(packet):
+        global logCounter
+        if not re.search(hostname, packet[DNSQR].qname):
+
+            ## Whitelist first
+            if packet[IP].src in whiteSet:
+                with open('white.log', 'a') as oFile:
+                    oFile.write(str(time.time()) + ':' + packet[IP].src + ':' + hexstr(str(packet), onlyhex = 1) + '\n')
+
+            ## Verify if their in the badSet
+            elif not packet[IP].src in badSet:
+                badSet.add(packet[IP].src)
+                
+                ## Now they're being bad, we need to set them to +1
+                badDict.update({packet[IP].src: 1})
+                
+                ## Load the original query into the dict
+                queryDict.update({packet[IP].src + '_1': hexstr(str(packet), onlyhex = 1)})
+                with open(queryFile, 'a') as iFile:
+                    iFile.write(str(time.time()) + ':' + packet[IP].src + '_1:' + hexstr(str(packet), onlyhex = 1) + '\n')
+            
+            ## So, they're in the badSet, have they exceeded strikeLimit?
+            else:
+                if badDict.get(packet[IP].src) < strikeLimit:
+                    badDict.update({packet[IP].src: badDict.get(packet[IP].src) + 1})
+                    with open(queryFile, 'a') as oFile:
+                        oFile.write(str(logCounter) + ':' + packet[IP].src + '_' + str(badDict.get(packet[IP].src)) + ':' + hexstr(str(packet), onlyhex = 1) + ':' + str(time.time()) + '\n')
+                    logCounter += 1
+
+                ## Prevent them
+                else:
+                    if not packet[IP].src in banSet:
+                        p1 = subprocess.Popen(split('iptables -I INPUT -s {0} -j DROP'.format(packet[IP].src)),
+                                              stdout = subprocess.PIPE)
+                        p1.wait()
+                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}'.format(packet[IP].src,
+                                                                                     packet[DNS].opcode,
+                                                                                     packet[DNSQR].qtype,
+                                                                                     packet[DNSQR].qname)
+                        banSet.add(packet[IP].src)
+                        with open(logFile, 'a') as iFile:
+                            iFile.write(packet[IP].src + ':' + str(time.time()) + '\n')
+    return engine
+
+if __name__ == '__main__':
+    ## Setup logging
+    stdOut = sys.stdout
+    stdErr = sys.stderr
+    sys.stdout = sys.stderr
+    sys.stderr = stdOut
+    oLog = open('tee.log', 'w')
+    sys.stdout = Tee(stdOut, oLog)
+    
+    ## Preloads
+    badSet = set()
+    badDict = {}
+    banSet = set()
+    logCounter = 0
+    queryDict = {}
+    strikeLimit = 5
+    hostname = raw_input('What is your hostname?\n')
+    hostname = hostname + '.'
+    print '\nPreventing queries for other than %s\n' % hostname
+    logFile = 'hits.log'
+    queryFile = 'query.log'
+
+    ## Deal with whitelistings
+    whiteSet = set()
+    if os.path.isfile('white.lst'):
+        with open('white.lst', 'r') as iFile:
+            whiteList = iFile.read().splitlines()
+        for i in whiteList:
+            print 'Whitelisting %s' % i
+            whiteSet.add(i)
+    
+    ## Check for prior logs
+    if os.path.isfile(logFile):
+        print ''
+        with open(logFile, 'r') as iFile:
+            banList = iFile.read().splitlines()
+        for i in banList:
+            print 'Adding %s' % i.split(':')[1]
+            badSet.add(i.split(':')[1])
+            badDict.update({i.split(':')[1]: 3})
+            banSet.add(i.split(':')[1])
+    print ''
+
+    ## Start parsing
+    pHandler = packetParser()
+    sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer(DNSQR), store = 0)

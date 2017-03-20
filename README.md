@@ -11,6 +11,9 @@
 ## CookieJack.sh
 * An ingenious method for looping webpages to infinity and beyond using a simple iframe
 
+## firewall
+* Useful scripts for firewalls
+
 ## email-em
 * Send an email via the command line
 
