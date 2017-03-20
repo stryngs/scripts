@@ -30,9 +30,6 @@
 ## mParser
 * A sqlite3 parser for massscan XML results
 
-## obfume
-* Create an obfuscated payload
-
 ## quickset
 * A quick way to implement MITM style attacks for wired or wireless scenarios
 
@@ -52,6 +49,9 @@
 ### b64.sh
 * Brute force decoder for base64 encoded strings
 * Helps to deal with server-side obfuscation
+
+### obfume
+* Create an obfuscated payload
 
 ## surfpwn.sh
 * Motorola SBG6580 bruteforce password decoder
