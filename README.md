@@ -14,10 +14,11 @@
 ## firewall
 * Useful scripts for firewalls
 
-## email-em
+## email
+### email-em
 * Send an email via the command line
 
-## epull
+### epull
 * Verify the existence of an email address
 
 ## hydrafy
