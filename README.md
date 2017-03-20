@@ -9,7 +9,7 @@
 * Helps to deal with server-side obfuscation
 
 ## CookieJack.sh
-* An ingenious method for looping webpages to infinity and beyond using a simple iframe
+* Loop webpages to infinity and beyond using a simple iframe
 
 ## firewall
 * Useful scripts for firewalls
