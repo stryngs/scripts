@@ -21,6 +21,9 @@
 ### epull
 * Verify the existence of an email address
 
+### mx-rip
+* Rip MX record for a given set of email addresses and do something with it...
+
 ## hydrafy
 * A way to automatically interact with hydra.
 * Contains comprehensive list of default usernames and passwords
@@ -33,9 +36,6 @@
 
 ## mParser
 * A sqlite3 parser for massscan XML results
-
-## mx-rip
-* Rip MX record for a given set of email addresses and do something with it...
 
 ## obfume
 * Create an obfuscated payload
