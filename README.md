@@ -1,13 +1,6 @@
 ## arp-em
 * Arpspoofing via scapy
 
-## ascii-me
-* On-the-fly HEX and ASCII URL converter
-
-## b64.sh
-* Brute force decoder for base64 encoded strings
-* Helps to deal with server-side obfuscation
-
 ## CookieJack.sh
 * Loop webpages to infinity and beyond using a simple iframe
 
@@ -49,6 +42,16 @@
 
 ## stopwatch.py
 * Useful time delta stopwatch style module for python.
+
+## strings
+* Scripts which modify strings of characters
+
+### ascii-me
+* On-the-fly HEX and ASCII URL converter
+
+### b64.sh
+* Brute force decoder for base64 encoded strings
+* Helps to deal with server-side obfuscation
 
 ## surfpwn.sh
 * Motorola SBG6580 bruteforce password decoder
