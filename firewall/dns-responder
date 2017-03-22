@@ -78,13 +78,28 @@ def packetParser():
                                               stdout = subprocess.PIPE)
                         p1.wait()
                         print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}'.format(packet[IP].src,
-                                                                                     packet[DNS].opcode,
-                                                                                     packet[DNSQR].qtype,
+                                                                                     symString(packet[DNS],
+                                                                                               packet[DNS].opcode,
+                                                                                               'opcode'),
+                                                                                     symString(packet[DNSQR],
+                                                                                               packet[DNSQR].qtype,
+                                                                                               'qtype'),
                                                                                      packet[DNSQR].qname)
                         banSet.add(packet[IP].src)
                         with open(logFile, 'a') as iFile:
                             iFile.write(packet[IP].src + ':' + str(time.time()) + '\n')
     return engine
+
+def symString(packet, pField, fString):
+    """Shows the symblic string for a given field
+    Where p is UDP(), and you want p.dport symbolically:
+        symString(p, p.dport, 'dport')
+    
+    Where p is UDP()/DNS(), and you want p[DNS].opcode symbolically:
+        symString(p[DNS], p[DNS].opcode, 'opcode')
+    """
+    return packet.get_field(fString).i2repr(packet, pField)
+
 
 if __name__ == '__main__':
     ## Setup logging
@@ -123,10 +138,10 @@ if __name__ == '__main__':
         with open(logFile, 'r') as iFile:
             banList = iFile.read().splitlines()
         for i in banList:
-            print 'Adding %s' % i.split(':')[1]
-            badSet.add(i.split(':')[1])
-            badDict.update({i.split(':')[1]: 3})
-            banSet.add(i.split(':')[1])
+            print 'Adding %s' % i.split(':')[0]
+            badSet.add(i.split(':')[0])
+            badDict.update({i.split(':')[0]: strikeLimit})
+            banSet.add(i.split(':')[0])
     print ''
 
     ## Start parsing
