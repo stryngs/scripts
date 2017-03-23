@@ -1,0 +1,32 @@
+#!/usr/bin/python
+
+"""
+Useful for reverse IP lookups for entries made from dns-responder
+"""
+
+import concurrent.futures
+from dns import resolver, reversename
+dns_resolver = resolver.Resolver()
+dns_resolver.timeout = 3
+dns_resolver.lifetime = 3
+logFile = open('reverse.log', 'w')
+with open('hits.log', 'r') as iFile:
+    ipList = iFile.read().splitlines()
+
+def get_hostname_from_ip(ip):
+    """Reverse the IP"""
+    try:
+        reverse_name = reversename.from_address(ip.split(':')[0])
+        rev = dns_resolver.query(reverse_name, 'PTR')[0].to_text()[:-1]
+        if rev:
+            logFile.write(ip.split(':')[0] + ':' + rev + '\n')
+    except:
+        pass
+
+## Pool it up    
+with concurrent.futures.ThreadPoolExecutor(max_workers = 16) as pool:
+    results = list(pool.map(get_hostname_from_ip, ipList))
+
+## Closeouts
+logFile.close()
+print 'Entries written to reverse.log\n'
