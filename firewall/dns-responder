@@ -12,6 +12,7 @@ Have to add option for:
 
 import logging, os, subprocess, sys, time
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+from dns import resolver, reversename
 from scapy.all import *
 from shlex import split
 
@@ -39,7 +40,7 @@ class Tee(object):
         self.fd2.flush()
 
 
-def packetParser():
+def packetParser(r):
     """Prevent DNS queries that should not occur"""
     #global logCounter
     def engine(packet):
@@ -77,7 +78,12 @@ def packetParser():
                         p1 = subprocess.Popen(split('iptables -I INPUT -s {0} -j DROP'.format(packet[IP].src)),
                                               stdout = subprocess.PIPE)
                         p1.wait()
-                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}'.format(packet[IP].src,
+                        try:
+                            rev = r.query(reversename.from_address(packet[IP].src[:-1]), 'PTR')[0].to_text()[:-1]
+                        except:
+                            rev = ''
+                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}:{4}'.format(packet[IP].src[:-1],
+                                                                                     rev,
                                                                                      symString(packet[DNS],
                                                                                                packet[DNS].opcode,
                                                                                                'opcode'),
@@ -111,6 +117,9 @@ if __name__ == '__main__':
     sys.stdout = Tee(stdOut, oLog)
     
     ## Preloads
+    r = resolver.Resolver()
+    r.timeout = 3
+    r.lifetime = 3
     badSet = set()
     badDict = {}
     banSet = set()
@@ -145,5 +154,5 @@ if __name__ == '__main__':
     print ''
 
     ## Start parsing
-    pHandler = packetParser()
+    pHandler = packetParser(r)
     sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer(DNSQR), store = 0)
