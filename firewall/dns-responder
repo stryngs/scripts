@@ -79,10 +79,10 @@ def packetParser(r):
                                               stdout = subprocess.PIPE)
                         p1.wait()
                         try:
-                            rev = r.query(reversename.from_address(packet[IP].src[:-1]), 'PTR')[0].to_text()[:-1]
+                            rev = r.query(reversename.from_address(packet[IP].src), 'PTR')[0].to_text()[:-1]
                         except:
                             rev = ''
-                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}:{4}'.format(packet[IP].src[:-1],
+                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}:{4}'.format(packet[IP].src,
                                                                                      rev,
                                                                                      symString(packet[DNS],
                                                                                                packet[DNS].opcode,
