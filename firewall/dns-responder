@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Useful for blocking erroneous DNS queries to a Nameserver
+Useful for blocking or viewing erroneous DNS queries to a Nameserver
 
 Have to add option for:
     - while read lines; do line=$(echo "$lines" | cut -d: -f2); iptables -D INPUT -s "$line" -j DROP; done<log.lst
@@ -61,7 +61,7 @@ def packetLogger(packet, logfile, counter):
                     '\n')
 
 
-def packetParser():
+def packetParser(uChoice):
     """Prevent DNS queries that should not occur"""
     #global logCounter
     def engine(packet):
@@ -96,9 +96,10 @@ def packetParser():
                 ## Prevent them
                 else:
                     if not packet[IP].src in banSet:
-                        p1 = subprocess.Popen(split('iptables -I INPUT -s {0} -j DROP'.format(packet[IP].src)),
-                                              stdout = subprocess.PIPE)
-                        p1.wait()
+                        if uChoice.lower() == 'y':
+                            p1 = subprocess.Popen(split('iptables -I INPUT -s {0} -j DROP'.format(packet[IP].src)),
+                                                stdout = subprocess.PIPE)
+                            p1.wait()
                         try:
                             rev = r.query(reversename.from_address(packet[IP].src), 'PTR')[0].to_text()[:-1]
                         except:
@@ -115,7 +116,10 @@ def packetParser():
                                                                                                         packet[DNSQR].qtype,
                                                                                                         'qtype'),
                                                                                               packet[DNSQR].qname)
-                        print dropOut
+                        if uChoice.lower() == 'n' or not uChoice:
+                            print '* %s' % dropOut
+                        else:
+                            print dropOut
                         with open('drop.log', 'a') as oFile:
                             oFile.write(dropOut + '\n')
                         with open(logFile, 'a') as iFile:
@@ -139,7 +143,7 @@ if __name__ == '__main__':
     stdErr = sys.stderr
     sys.stdout = sys.stderr
     sys.stderr = stdOut
-    oLog = open('tee.log', 'w')
+    oLog = open('responder.log', 'w')
     sys.stdout = Tee(stdOut, oLog)
     
     ## Preloads
@@ -155,6 +159,7 @@ if __name__ == '__main__':
     strikeLimit = 5
     hostname = raw_input('What is your hostname?\n')
     hostname = hostname + '.'
+    uChoice = raw_input('\nDo you wish to implement drops? [y/N]\n')
     print '\nPreventing queries for other than %s\n' % hostname
     logFile = 'hits.log'
     queryFile = 'query.log'
@@ -181,5 +186,5 @@ if __name__ == '__main__':
     print ''
 
     ## Start parsing
-    pHandler = packetParser()
-    sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer(DNSQR), store = 0)
+    pHandler = packetParser(uChoice)
+    sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer('DNSQR'), store = 0)
