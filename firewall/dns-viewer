@@ -41,8 +41,8 @@ def packetParser(ipDict):
             rrname = 'rrname: %s' % packet[DNSRR].rrname
             rtype = 'rtype: %s' % packet[DNSRR].type
         except:
-            rrname = None
-            rtype = None
+            rrname = 'rrname: None'
+            rtype = 'rtype: None'
 
         print src
         print dst
