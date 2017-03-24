@@ -38,12 +38,6 @@ def packetParser(ipDict):
                                         packet[DNSQR].qtype,
                                         'qtype')
         qname = 'qname: %s' % packet[DNSQR].qname
-        try:
-            rrname = 'rrname: %s' % packet[DNSRR].rrname
-            rtype = 'rtype: %s' % packet[DNSRR].type
-        except:
-            rrname = 'rrname: None'
-            rtype = 'rtype: None'
 
         print tm
         print src
@@ -51,20 +45,15 @@ def packetParser(ipDict):
         print opcode
         print query
         print qname
-        print rrname
-        print rtype
         print ''
 
         with open('viewer.log', 'a') as oFile:
-            oFile.write(tm + '\n' + 
+            oFile.write(str(tm) + '\n' + 
                         src + '\n' +
                         dst + '\n' +
                         opcode + '\n' +
                         query + '\n' +
-                        qname + '\n' +
-                        rrname + '\n' +
-                        rtype + '\n\n')
-        
+                        qname + '\n\n')
     return engine
 
 def symString(packet, pField, fString):
