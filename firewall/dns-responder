@@ -40,17 +40,39 @@ class Tee(object):
         self.fd2.flush()
 
 
-def packetParser(r):
+
+def packetLogger(packet, logfile, counter):
+    """Take a given packet and log the important info"""
+    if counter == logCounter:
+        cnt = logCounter
+    if counter == wCounter:
+        cnt = wCounter
+        
+    with open(logfile, 'a') as oFile:
+        oFile.write(str(cnt) +
+                    ':' +
+                    packet[IP].src +
+                    '_' +
+                    str(badDict.get(packet[IP].src)) +
+                    ':' +
+                    hexstr(str(packet), onlyhex = 1) +
+                    ':' +
+                    str(time.time()) +
+                    '\n')
+
+
+def packetParser():
     """Prevent DNS queries that should not occur"""
     #global logCounter
     def engine(packet):
         global logCounter
+        global wCounter
         if not re.search(hostname, packet[DNSQR].qname):
 
             ## Whitelist first
             if packet[IP].src in whiteSet:
-                with open('white.log', 'a') as oFile:
-                    oFile.write(str(time.time()) + ':' + packet[IP].src + ':' + hexstr(str(packet), onlyhex = 1) + '\n')
+                packetLogger(packet, 'white.log', wCounter)
+                wCounter += 1
 
             ## Verify if their in the badSet
             elif not packet[IP].src in badSet:
@@ -61,15 +83,14 @@ def packetParser(r):
                 
                 ## Load the original query into the dict
                 queryDict.update({packet[IP].src + '_1': hexstr(str(packet), onlyhex = 1)})
-                with open(queryFile, 'a') as iFile:
-                    iFile.write(str(time.time()) + ':' + packet[IP].src + '_1:' + hexstr(str(packet), onlyhex = 1) + '\n')
+                packetLogger(packet, queryFile, logCounter)
+                logCounter += 1
             
             ## So, they're in the badSet, have they exceeded strikeLimit?
             else:
                 if badDict.get(packet[IP].src) < strikeLimit:
                     badDict.update({packet[IP].src: badDict.get(packet[IP].src) + 1})
-                    with open(queryFile, 'a') as oFile:
-                        oFile.write(str(logCounter) + ':' + packet[IP].src + '_' + str(badDict.get(packet[IP].src)) + ':' + hexstr(str(packet), onlyhex = 1) + ':' + str(time.time()) + '\n')
+                    packetLogger(packet, queryFile, logCounter)
                     logCounter += 1
 
                 ## Prevent them
@@ -82,16 +103,21 @@ def packetParser(r):
                             rev = r.query(reversename.from_address(packet[IP].src), 'PTR')[0].to_text()[:-1]
                         except:
                             rev = ''
-                        print 'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}:{4}'.format(packet[IP].src,
-                                                                                     rev,
-                                                                                     symString(packet[DNS],
-                                                                                               packet[DNS].opcode,
-                                                                                               'opcode'),
-                                                                                     symString(packet[DNSQR],
-                                                                                               packet[DNSQR].qtype,
-                                                                                               'qtype'),
-                                                                                     packet[DNSQR].qname)
+                        
+                        ## Ban logs
                         banSet.add(packet[IP].src)
+                        dropOut =  'iptables -I INPUT -s {0} -j DROP: {1}:{2}:{3}:{4}'.format(packet[IP].src,
+                                                                                              rev,
+                                                                                              symString(packet[DNS],
+                                                                                                        packet[DNS].opcode,
+                                                                                                        'opcode'),
+                                                                                              symString(packet[DNSQR],
+                                                                                                        packet[DNSQR].qtype,
+                                                                                                        'qtype'),
+                                                                                              packet[DNSQR].qname)
+                        print dropOut
+                        with open('drop.log', 'a') as oFile:
+                            oFile.write(dropOut + '\n')
                         with open(logFile, 'a') as iFile:
                             iFile.write(packet[IP].src + ':' + str(time.time()) + '\n')
     return engine
@@ -121,10 +147,11 @@ if __name__ == '__main__':
     r.timeout = 3
     r.lifetime = 3
     badSet = set()
-    badDict = {}
     banSet = set()
-    logCounter = 0
+    badDict = {}
     queryDict = {}
+    logCounter = 0
+    wCounter = 0
     strikeLimit = 5
     hostname = raw_input('What is your hostname?\n')
     hostname = hostname + '.'
@@ -147,12 +174,12 @@ if __name__ == '__main__':
         with open(logFile, 'r') as iFile:
             banList = iFile.read().splitlines()
         for i in banList:
-            print 'Adding %s' % i.split(':')[0]
+            print 'Skipping %s' % i.split(':')[0]
             badSet.add(i.split(':')[0])
             badDict.update({i.split(':')[0]: strikeLimit})
             banSet.add(i.split(':')[0])
     print ''
 
     ## Start parsing
-    pHandler = packetParser(r)
+    pHandler = packetParser()
     sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer(DNSQR), store = 0)

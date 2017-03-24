@@ -9,10 +9,15 @@ from binascii import unhexlify
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 
-with open('query.log', 'r') as iFile:
+try:
+    log = sys.argv[1]
+    ln = int(sys.argv[2])
+except:
+    print 'Usage:\ndns-decoder <log file> <line number>\n'
+
+with open(log, 'r') as iFile:
     hits = iFile.read().splitlines()
 
-line = int(sys.argv[1])
-hexInput = hits[line].split(':')[2]
+hexInput = hits[ln].split(':')[2]
 hexStr = unhexlify(hexInput.replace(' ', ''))
 print [Ether(hexStr)]
