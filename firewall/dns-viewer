@@ -27,6 +27,7 @@ def packetParser(ipDict):
         else:
             pVal = ipDict.get(packet[IP].src)
             ipDict.update({packet[IP].src: pVal + 1})
+        tm = time.time()
         src = 'src: %s -- %s' % (packet[IP].src,
                                  ipDict.get(packet[IP].src))
         dst = 'dst: %s' % packet[IP].dst
@@ -44,6 +45,7 @@ def packetParser(ipDict):
             rrname = 'rrname: None'
             rtype = 'rtype: None'
 
+        print tm
         print src
         print dst
         print opcode
@@ -54,7 +56,8 @@ def packetParser(ipDict):
         print ''
 
         with open('viewer.log', 'a') as oFile:
-            oFile.write(src + '\n' +
+            oFile.write(tm + '\n' + 
+                        src + '\n' +
                         dst + '\n' +
                         opcode + '\n' +
                         query + '\n' +
