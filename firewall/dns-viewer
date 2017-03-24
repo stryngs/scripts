@@ -1,0 +1,85 @@
+#!/usr/bin/python
+
+"""
+Useful for viewing DNSQR requests
+
+cat viewer.log | grep src | cut -d: -f2 | cut -d- -f1 | sort -u
+"""
+
+import logging, os, subprocess, sys, time
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+from scapy.all import *
+
+class Tee(object):
+    """Python Tee implementation"""
+    def __init__(self, _fd1, _fd2) :
+        self.fd1 = _fd1
+        self.fd2 = _fd2
+
+
+    def __del__(self) :
+        if self.fd1 != sys.stdout and self.fd1 != sys.stderr :
+            self.fd1.close()
+        if self.fd2 != sys.stdout and self.fd2 != sys.stderr :
+            self.fd2.close()
+
+
+    def write(self, text) :
+        self.fd1.write(text)
+        self.fd2.write(text)
+
+
+    def flush(self) :
+        self.fd1.flush()
+        self.fd2.flush()
+
+
+
+def packetParser(ipDict):
+    """View the info from DNSQR"""
+    def engine(packet):
+        if ipDict.get(packet[IP].src) is None:
+            ipDict.update({packet[IP].src: 0})
+        else:
+            pVal = ipDict.get(packet[IP].src)
+            ipDict.update({packet[IP].src: pVal + 1})
+        print 'src: %s -- %s' % (packet[IP].src,
+                                 ipDict.get(packet[IP].src))
+        print 'dst: %s' % packet[IP].dst
+        print 'opcode: %s' % symString(packet[DNS],
+                                       packet[DNS].opcode,
+                                       'opcode')
+        print 'query: %s' % symString(packet[DNSQR],
+                                      packet[DNSQR].qtype,
+                                      'qtype')
+        print 'qname: %s' % packet[DNSQR].qname
+        try:
+            print 'rrname: %s' % packet[DNSRR].rrname
+            print 'rtype: %s\n\n' % packet[DNSRR].type
+        except:
+            print '\n'
+    return engine
+
+def symString(packet, pField, fString):
+    """Shows the symblic string for a given field
+    Where p is UDP(), and you want p.dport symbolically:
+        symString(p, p.dport, 'dport')
+    
+    Where p is UDP()/DNS(), and you want p[DNS].opcode symbolically:
+        symString(p[DNS], p[DNS].opcode, 'opcode')
+    """
+    return packet.get_field(fString).i2repr(packet, pField)
+
+
+if __name__ == '__main__':
+    ## Setup logging
+    stdOut = sys.stdout
+    stdErr = sys.stderr
+    sys.stdout = sys.stderr
+    sys.stderr = stdOut
+    oLog = open('viewer.log', 'w')
+    sys.stdout = Tee(stdOut, oLog)
+    
+    ipDict = {}
+    pHandler = packetParser(ipDict)
+    sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer('DNSQR'), store = 0)
