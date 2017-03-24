@@ -6,33 +6,17 @@ Useful for viewing DNSQR requests
 cat viewer.log | grep src | cut -d: -f2 | cut -d- -f1 | sort -u
 """
 
-import logging, os, subprocess, sys, time
+import logging, os, signal, subprocess, sys, time
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 
-class Tee(object):
-    """Python Tee implementation"""
-    def __init__(self, _fd1, _fd2) :
-        self.fd1 = _fd1
-        self.fd2 = _fd2
-
-
-    def __del__(self) :
-        if self.fd1 != sys.stdout and self.fd1 != sys.stderr :
-            self.fd1.close()
-        if self.fd2 != sys.stdout and self.fd2 != sys.stderr :
-            self.fd2.close()
-
-
-    def write(self, text) :
-        self.fd1.write(text)
-        self.fd2.write(text)
-
-
-    def flush(self) :
-        self.fd1.flush()
-        self.fd2.flush()
-
+def crtlC(args):
+    """Handle CTRL+C."""
+    def tmp(signal, frame):
+        print '\n\nCrtl + C detected.  Stopping dns-viewer'
+        print 'Final stats:\n%s' % ipDict
+        sys.exit(0)
+    return tmp
 
 
 def packetParser(ipDict):
@@ -43,21 +27,41 @@ def packetParser(ipDict):
         else:
             pVal = ipDict.get(packet[IP].src)
             ipDict.update({packet[IP].src: pVal + 1})
-        print 'src: %s -- %s' % (packet[IP].src,
+        src = 'src: %s -- %s' % (packet[IP].src,
                                  ipDict.get(packet[IP].src))
-        print 'dst: %s' % packet[IP].dst
-        print 'opcode: %s' % symString(packet[DNS],
-                                       packet[DNS].opcode,
-                                       'opcode')
-        print 'query: %s' % symString(packet[DNSQR],
-                                      packet[DNSQR].qtype,
-                                      'qtype')
-        print 'qname: %s' % packet[DNSQR].qname
+        dst = 'dst: %s' % packet[IP].dst
+        opcode = 'opcode: %s' % symString(packet[DNS],
+                                          packet[DNS].opcode,
+                                          'opcode')
+        query = 'query: %s' % symString(packet[DNSQR],
+                                        packet[DNSQR].qtype,
+                                        'qtype')
+        qname = 'qname: %s' % packet[DNSQR].qname
         try:
-            print 'rrname: %s' % packet[DNSRR].rrname
-            print 'rtype: %s\n\n' % packet[DNSRR].type
+            rrname = 'rrname: %s' % packet[DNSRR].rrname
+            rtype = 'rtype: %s' % packet[DNSRR].type
         except:
-            print '\n'
+            rrname = None
+            rtype = None
+
+        print src
+        print dst
+        print opcode
+        print query
+        print qname
+        print rrname
+        print rtype
+        print ''
+
+        with open('viewer.log', 'a') as oFile:
+            oFile.write(src + '\n' +
+                        dst + '\n' +
+                        opcode + '\n' +
+                        query + '\n' +
+                        qname + '\n' +
+                        rrname + '\n' +
+                        rtype + '\n\n')
+        
     return engine
 
 def symString(packet, pField, fString):
@@ -72,14 +76,11 @@ def symString(packet, pField, fString):
 
 
 if __name__ == '__main__':
-    ## Setup logging
-    stdOut = sys.stdout
-    stdErr = sys.stderr
-    sys.stdout = sys.stderr
-    sys.stderr = stdOut
-    oLog = open('viewer.log', 'w')
-    sys.stdout = Tee(stdOut, oLog)
-    
+    ## Signal handler
     ipDict = {}
+    signal_handler = crtlC(ipDict)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    ## Launch
     pHandler = packetParser(ipDict)
     sniff(iface = 'eth0', prn=pHandler, lfilter = lambda x: x.haslayer('DNSQR'), store = 0)
