@@ -27,8 +27,8 @@ class SQL(object):
         self.db.execute('CREATE TABLE IF NOT EXISTS\
                             "pkt"("num" INT,\
                                   "time" TEXT,\
-                                  "src" TEXT,\
-                                  "dst" TEXT,\
+                                  "dir" TEXT,\
+                                  "ip" TEXT,\
                                   "pkt" BLOB);')
         self.con.commit()
 
@@ -68,7 +68,7 @@ def packetParser(sql, myIP, srcIPs, dstIPs):
                                    ?);',\
                                   (pVal,\
                                    tm,\
-                                   packet[IP].src,\
+                                   "outbound",\
                                    packet[IP].dst,\
                                    hexstr(str(packet), onlyhex = 1)))
 
@@ -101,8 +101,8 @@ def packetParser(sql, myIP, srcIPs, dstIPs):
                                    ?);',\
                                   (pVal,\
                                    tm,\
+                                   "inbound",\
                                    packet[IP].src,\
-                                   packet[IP].dst,\
                                    hexstr(str(packet), onlyhex = 1)))
 
             ## Print it
