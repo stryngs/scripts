@@ -36,7 +36,7 @@ class SQL(object):
 def crtlC(srcIPs, dstIPs):
     """Handle CTRL+C."""
     def tmp(signal, frame):
-        print '\n\nCrtl + C detected.  Stopping dns-checker'
+        print '\n\ncrtl + c detected.  Stopping dns-checker'
         print 'Final stats:\nsrc: %s\ndst: %s' % (srcIPs, dstIPs)
         sys.exit(0)
     return tmp

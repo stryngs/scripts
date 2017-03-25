@@ -13,7 +13,7 @@ from scapy.all import *
 def crtlC(ipDict):
     """Handle CTRL+C."""
     def tmp(signal, frame):
-        print '\n\nCrtl + C detected.  Stopping dns-viewer'
+        print '\n\ncrtl + c detected.  Stopping dns-viewer'
         print 'Final stats:\n%s' % ipDict
         sys.exit(0)
     return tmp
