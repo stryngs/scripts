@@ -1,0 +1,34 @@
+#!/usr/bin/python
+
+"""
+Useful for decoding SQL entries made from dns-checker
+"""
+
+import logging, sys
+import sqlite3 as lite
+from binascii import unhexlify
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+from scapy.all import *
+
+try:
+    count = sys.argv[1]
+    orig = sys.argv[2]
+    ip = sys.argv[3]
+except:
+    print 'Usage:\ndns-decoder <num> <inbound or outbound> <ip>\n'
+
+con = lite.connect('checker.sqlite')
+con.text_factory = str
+db = con.cursor()
+
+q = db.execute('SELECT\
+                    `pkt`\
+                FROM\
+                    `pkt`\
+                WHERE\
+                    `num` = "{0}" AND `dir` = "{1}" AND `ip` = "{2}"'.format(count,
+                                                                             orig,
+                                                                             ip))
+hexPkt = q.fetchone()[0]
+hexStr = unhexlify(hexPkt.replace(' ', ''))
+print [Ether(hexStr)]
