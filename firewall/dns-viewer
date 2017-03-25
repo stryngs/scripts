@@ -10,7 +10,7 @@ import logging, os, signal, subprocess, sys, time
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 
-def crtlC(args):
+def crtlC(ipDict):
     """Handle CTRL+C."""
     def tmp(signal, frame):
         print '\n\nCrtl + C detected.  Stopping dns-viewer'
