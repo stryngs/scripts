@@ -1,0 +1,142 @@
+#!/usr/bin/python
+
+"""
+Sort DNSQR by src and dst
+
+src hits:
+    cat checker.log | grep src | cut -d: -f2 | cut -d- -f1| sort -u
+
+dst hits:
+    cat checker.log | grep dst | cut -d: -f2 | cut -d- -f1| sort -u
+"""
+
+import logging, os, netifaces, signal, subprocess, sys, time
+import sqlite3 as lite
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+from scapy.all import *
+
+class SQL(object):
+    """Use SQL to store the packets"""
+    
+    def __init__(self):
+        self.con = lite.connect('checker.sqlite')
+        self.con.text_factory = str
+        self.db = self.con.cursor()
+        
+        ## Generate src table        
+        self.db.execute('CREATE TABLE IF NOT EXISTS\
+                            "pkt"("num" INT,\
+                                  "time" TEXT,\
+                                  "src" TEXT,\
+                                  "dst" TEXT,\
+                                  "pkt" BLOB);')
+        self.con.commit()
+
+
+def crtlC(srcIPs, dstIPs):
+    """Handle CTRL+C."""
+    def tmp(signal, frame):
+        print '\n\nCrtl + C detected.  Stopping dns-checker'
+        print 'Final stats:\nsrc: %s\ndst: %s' % (srcIPs, dstIPs)
+        sys.exit(0)
+    return tmp
+
+
+def packetParser(sql, myIP, srcIPs, dstIPs):
+    """Notate and store what is going on with DNSQRs"""
+    def engine(packet):
+        tm = str(time.time())
+        
+        ## Deal with SRC
+        if packet[IP].src == myIP:
+            
+            ## Log it
+            if srcIPs.get(packet[IP].src) is None:
+                pVal = 1
+                srcIPs.update({packet[IP].src: pVal})
+            else:
+                pVal = srcIPs.get(packet[IP].src) + 1
+                srcIPs.update({packet[IP].src: pVal})
+
+            ## Store the packet
+            sql.db.execute('INSERT INTO\
+                                "pkt"\
+                            VALUES(?,\
+                                   ?,\
+                                   ?,\
+                                   ?,\
+                                   ?);',\
+                                  (pVal,\
+                                   tm,\
+                                   packet[IP].src,\
+                                   packet[IP].dst,\
+                                   hexstr(str(packet), onlyhex = 1)))
+
+            ## Print it
+            oPut = 'src: %s -- %s' % (packet[IP].src, str(srcIPs.get(packet[IP].src)))
+            print oPut
+            
+            ## Store to stdout
+            with open('checker.log', 'a') as oFile:
+                oFile.write(oPut + '\n')
+
+        ## Deal with DST
+        if packet[IP].dst == myIP:
+            
+            ## Log it
+            if dstIPs.get(packet[IP].dst) is None:
+                pVal = 1
+                dstIPs.update({packet[IP].dst: pVal})
+            else:
+                pVal = dstIPs.get(packet[IP].dst) + 1
+                dstIPs.update({packet[IP].dst: pVal})
+
+            ## Store the packet
+            sql.db.execute('INSERT INTO\
+                                "pkt"\
+                            VALUES(?,\
+                                   ?,\
+                                   ?,\
+                                   ?,\
+                                   ?);',\
+                                  (pVal,\
+                                   tm,\
+                                   packet[IP].src,\
+                                   packet[IP].dst,\
+                                   hexstr(str(packet), onlyhex = 1)))
+
+            ## Print it
+            oPut = 'dst: %s -- %s' % (packet[IP].dst, str(dstIPs.get(packet[IP].dst)))
+            print oPut
+
+            ## Store to stdout
+            with open('checker.log', 'a') as oFile:
+                oFile.write(oPut + '\n')
+        
+        ## Commit to DB
+        sql.con.commit()
+    return engine
+
+
+if __name__ == '__main__':
+    ## Grab the IP
+    try:
+        myIP = netifaces.ifaddresses(sys.argv[1])[2][0]['addr']
+    except:
+        print 'Usage:\ndns-checker <NIC>\n'
+        sys.exit(1)
+    
+    ## Store the counts
+    srcIPs = {}
+    dstIPs = {}
+    
+    ## Create the DB
+    sql = SQL()
+    
+    ## Signal handler
+    signal_handler = crtlC(srcIPs, dstIPs)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    ## Launch
+    pHandler = packetParser(sql, myIP, srcIPs, dstIPs)
+    sniff(iface = sys.argv[1], prn=pHandler, lfilter = lambda x: x.haslayer('DNSQR'), store = 0)
