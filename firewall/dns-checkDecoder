@@ -12,23 +12,19 @@ from scapy.all import *
 
 try:
     count = sys.argv[1]
-    orig = sys.argv[2]
-    ip = sys.argv[3]
 except:
-    print 'Usage:\ndns-decoder <num> <inbound or outbound> <ip>\n'
+    print 'Usage:\ndns-decoder <pkt num>\n'
+    sys.exit(1)
 
 con = lite.connect('checker.sqlite')
 con.text_factory = str
 db = con.cursor()
-
 q = db.execute('SELECT\
                     `pkt`\
                 FROM\
-                    `pkt`\
+                    `packets`\
                 WHERE\
-                    `num` = "{0}" AND `dir` = "{1}" AND `ip` = "{2}"'.format(count,
-                                                                             orig,
-                                                                             ip))
+                    `num` = "{0}"'.format(count))
 hexPkt = q.fetchone()[0]
 hexStr = unhexlify(hexPkt.replace(' ', ''))
 print [Ether(hexStr)]

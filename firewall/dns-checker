@@ -25,11 +25,16 @@ class SQL(object):
         
         ## Generate src table        
         self.db.execute('CREATE TABLE IF NOT EXISTS\
-                            "pkt"("num" INT,\
-                                  "time" TEXT,\
-                                  "dir" TEXT,\
-                                  "ip" TEXT,\
-                                  "pkt" BLOB);')
+                            "packets"("num" INT,\
+                                      "time" TEXT,\
+                                      "type" TEXT,\
+                                      "scount" INT,\
+                                      "dcount" INT,\
+                                      "smac" TEXT,\
+                                      "dmac" TEXT,\
+                                      "sip" TEXT,\
+                                      "dip" TEXT,\
+                                      "pkt" BLOB);')
         self.con.commit()
 
 
@@ -42,76 +47,96 @@ def crtlC(srcIPs, dstIPs):
     return tmp
 
 
-def packetParser(sql, myIP, srcIPs, dstIPs):
+def packetParser(sql, myIP, srcIPs, srcDst, dstIPs, dstSrc):
     """Notate and store what is going on with DNSQRs"""
     def engine(packet):
+        global pNum
+        pNum += 1
         tm = str(time.time())
         
         ## Deal with SRC
         if packet[IP].src == myIP:
             
-            ## Log it
+            ## Log the src and count
+            pType = 'src'
             if srcIPs.get(packet[IP].src) is None:
-                pVal = 1
-                srcIPs.update({packet[IP].src: pVal})
+                sCount = 1
+                srcIPs.update({packet[IP].src: sCount})
             else:
-                pVal = srcIPs.get(packet[IP].src) + 1
-                srcIPs.update({packet[IP].src: pVal})
+                sCount = srcIPs.get(packet[IP].src) + 1
+                srcIPs.update({packet[IP].src: sCount})
+                
+            ## Log the dst and count
+            if srcDst.get(packet[IP].dst) is None:
+                dCount = 1
+                srcDst.update({packet[IP].dst: dCount})
+            else:
+                dCount = srcDst.get(packet[IP].dst) + 1
+                srcDst.update({packet[IP].dst: dCount})
 
-            ## Store the packet
-            sql.db.execute('INSERT INTO\
-                                "pkt"\
-                            VALUES(?,\
-                                   ?,\
-                                   ?,\
-                                   ?,\
-                                   ?);',\
-                                  (pVal,\
-                                   tm,\
-                                   "outbound",\
-                                   packet[IP].dst,\
-                                   hexstr(str(packet), onlyhex = 1)))
-
-            ## Print it
-            oPut = 'src: %s -- %s' % (packet[IP].src, str(srcIPs.get(packet[IP].src)))
-            print oPut
-            
-            ## Store to stdout
-            with open('checker.log', 'a') as oFile:
-                oFile.write(oPut + '\n')
+            ## Generate output
+            oPut = 'dst: %s -- %s / %s -- %s' % (packet[IP].dst,
+                                                 str(srcDst.get(packet[IP].dst)),
+                                                 str(srcIPs.get(packet[IP].src)),
+                                                 pNum)
 
         ## Deal with DST
-        if packet[IP].dst == myIP:
+        else:
             
-            ## Log it
+            ## Log the dst and count
+            pType = 'dst'
             if dstIPs.get(packet[IP].dst) is None:
-                pVal = 1
-                dstIPs.update({packet[IP].dst: pVal})
+                dCount = 1
+                dstIPs.update({packet[IP].dst: dCount})
             else:
-                pVal = dstIPs.get(packet[IP].dst) + 1
-                dstIPs.update({packet[IP].dst: pVal})
+                dCount = dstIPs.get(packet[IP].dst) + 1
+                dstIPs.update({packet[IP].dst: dCount})
+                
+            ## Log the src and count
+            if dstSrc.get(packet[IP].src) is None:
+                sCount = 1
+                dstSrc.update({packet[IP].src: sCount})
+            else:
+                sCount = dstSrc.get(packet[IP].src) + 1
+                dstSrc.update({packet[IP].src: sCount})
 
-            ## Store the packet
-            sql.db.execute('INSERT INTO\
-                                "pkt"\
-                            VALUES(?,\
-                                   ?,\
-                                   ?,\
-                                   ?,\
-                                   ?);',\
-                                  (pVal,\
-                                   tm,\
-                                   "inbound",\
-                                   packet[IP].src,\
-                                   hexstr(str(packet), onlyhex = 1)))
+            ## Generate the output
+            oPut = 'src: %s -- %s / %s -- %s' % (packet[IP].src,
+                                                 str(dstSrc.get(packet[IP].src)),
+                                                 str(dstIPs.get(packet[IP].dst)),
+                                                 pNum)
 
-            ## Print it
-            oPut = 'dst: %s -- %s' % (packet[IP].dst, str(dstIPs.get(packet[IP].dst)))
-            print oPut
 
-            ## Store to stdout
-            with open('checker.log', 'a') as oFile:
-                oFile.write(oPut + '\n')
+        ## Store the packet
+        sql.db.execute('INSERT INTO\
+                            "packets"\
+                        VALUES(?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?,\
+                               ?);',\
+                              (pNum,\
+                               tm,\
+                               pType,\
+                               sCount,\
+                               dCount,\
+                               packet[Ether].src,\
+                               packet[Ether].dst,\
+                               packet[IP].src,\
+                               packet[IP].dst,\
+                               hexstr(str(packet), onlyhex = 1)))
+
+        ## Print the packet
+        print oPut
+
+        ## Log it
+        with open('checker.log', 'a') as oFile:
+            oFile.write(oPut + '\n')
         
         ## Commit to DB
         sql.con.commit()
@@ -127,8 +152,11 @@ if __name__ == '__main__':
         sys.exit(1)
     
     ## Store the counts
+    pNum = 0
     srcIPs = {}
+    srcDst = {}
     dstIPs = {}
+    dstSrc = {}
     
     ## Create the DB
     sql = SQL()
@@ -138,5 +166,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     
     ## Launch
-    pHandler = packetParser(sql, myIP, srcIPs, dstIPs)
+    pHandler = packetParser(sql, myIP, srcIPs, srcDst, dstIPs, dstSrc)
     sniff(iface = sys.argv[1], prn=pHandler, lfilter = lambda x: x.haslayer('DNSQR'), store = 0)
