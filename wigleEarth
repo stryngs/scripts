@@ -2,8 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 ## Purpose:
-## Take a Wigle DB and import it to Google Earth
-## Much easier than using Website based CSV to KML importers
+    ## Take a Wigle DB and import it to Google Earth
+    ## Much easier than using Website based CSV to KML importers
+
+## ToDo:
+    ## Make args based
+    ## Add options for no mac and no essid
 
 import os, sys
 import sqlite3 as lite
@@ -203,13 +207,13 @@ elif 'plot' in sys.argv[1]:
 
     ## Gen footer
     with open(hFile, 'a') as oFile:
-        oFile.write('\
+        oFile.write('\n\
       }\n\
     </script>\n\
     <script async defer\n\
-    src="https://maps.googleapis.com/maps/api/js?key={0}&callback=initMap">\n\
+    src="https://maps.googleapis.com/maps/api/js?key=%s&callback=initMap">\n\
     </script>\n\
   </body>\n\
-</html>\n'.format(apiKey)
+</html>\n' % apiKey)
         
     
