@@ -30,6 +30,9 @@
 ## mParser
 * A sqlite3 parser for massscan XML results
 
+## pmkid2hashcat
+* Weaponizing the PMKID attack as demonstrated by atom
+
 ## pyWhois
 * An interesting take on using whois type queries
 
