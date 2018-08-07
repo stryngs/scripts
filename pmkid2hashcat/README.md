@@ -11,6 +11,4 @@ Enter <b>pmkid2hashcat!</b>
 ## Pre-req
 https://github.com/ICSec/packetEssentials
 
-Weaponization coming very soon...
-
 Yes, <b>packetEssentials</b>, rocks =)
