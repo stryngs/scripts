@@ -29,6 +29,7 @@
 
 ## mParser
 * A sqlite3 parser for massscan XML results
+  * Now ties in common service to port commonalities
 
 ## pmkid2hashcat
 * Weaponizing the PMKID attack as demonstrated by atom
