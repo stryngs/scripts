@@ -1,11 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 """
-Take the XML results given from masscan and place them into a sqlite3 database
+Summary:
+    - Take the XML results given from masscan and place them into a sqlite3 database
+    - Visualize the data in interesting ways as to find quirks and commonalities
+    - Uses the services list from Nmap for visualization points
+    - Expandable to use other datasets as well
+
+Future plans:
+    - Add nmap XML import abilities
 """
 
 from lxml import etree
+from lib import db_handler
 from lib import list_handler
+from lib import scan_handler
+from lib import stats_handler
+import os
 import sqlite3 as lite
 import sys
 
@@ -13,114 +24,44 @@ import sys
 lHandler = list_handler.List()
 lHandler.list_pick()
 
-## Setup the DB
-con = lite.connect('masscan.sqlite')
-con.text_factory = str
-db = con.cursor()
+if __name__ == '__main__':
+    ## Map out the XML
+    try:
+        tree = etree.parse(sys.argv[1])
+        sqlFile = '.'.join(sys.argv[1].split('.')[:-1]) + '.sqlite3'
+    except:
+        print('Usage:\npython mParser <masscan results XML file>\n')
+        sys.exit(1)
+    root = tree.getroot()
+    
+    ## prep
+    try:
+        os.remove(sqlFile)
+    except:
+        pass    
+    
+    ## Setup the DB connections
+    con = lite.connect(sqlFile)
+    con.text_factory = str
+    db = con.cursor()
+    con.commit()
 
-## prep scan
-db.execute('CREATE TABLE IF NOT EXISTS\
-                `ip_list`("endtime" INT,\
-                          "addr" TEXT,\
-                          "addrtype" TEXT,\
-                          "protocol" TEXT,\
-                          "portid" INT,\
-                          "state" TEXT,\
-                          "reason" TEXT,\
-                          "reason_ttl" INT,\
-                          "name" TEXT,\
-                          "banner" TEXT,\
-                          UNIQUE("endtime",\
-                                 "addr",\
-                                 "addrtype",\
-                                 "protocol",\
-                                 "portid",\
-                                 "state",\
-                                 "reason",\
-                                 "reason_ttl",\
-                                 "name",\
-                                 "banner"));')
+    ## Be friendly to GUI SQL visualization
+    db.execute("""CREATE TABLE `_` (`_` INTEGER)""")
+    
+    ## Generate initial tables
+    dBase = db_handler.Database(db)
+    dBase.scan_prep()
+    dBase.svc_prep()
+    con.commit()
 
-## Prep services
-db.execute('CREATE TABLE IF NOT EXISTS\
-                `svc_list`("name" TEXT,\
-                           "port" INT,\
-                           "proto" TEXT,\
-                           "freq" TEXT,\
-                           "cmt" TEXT);')
+    ## Generate scan info
+    scan = scan_handler.Scan(con, db, lHandler, root)
 
-## Map out the XML
-try:
-    tree = etree.parse(sys.argv[1])
-except:
-    print('Usage:\npython mParser <masscan results XML file>\n')
-    sys.exit(1)
-root = tree.getroot()
-
-## Notate the data for the individual hosts
-hostList = root.findall('host')
-for i in hostList:
-    endtime = i.attrib.get('endtime')
-    eList = i.iter()
-    eDict = {}
-    for i in eList:
-        eDict.update({i.tag: i})
-    address = eDict.get('address').attrib.get('addr')
-    addrtype = eDict.get('address').attrib.get('addrtype')
-    protocol = eDict.get('port').attrib.get('protocol')
-    portid = eDict.get('port').attrib.get('portid')
-    state = eDict.get('state').attrib.get('state')
-    reason = eDict.get('state').attrib.get('reason')
-    reason_ttl = eDict.get('state').attrib.get('reason_ttl')
-    if eDict.has_key('service'):
-        name = eDict.get('service').attrib.get('name')
-        banner = eDict.get('service').attrib.get('banner')
-    else:
-        name = ''
-        banner = ''
-
-    ## Add the host to DB
-    db.execute('INSERT OR IGNORE INTO\
-                    `ip_list`\
-                VALUES(?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?,\
-                       ?);',\
-                      (endtime,\
-                       address,\
-                       addrtype,\
-                       protocol,\
-                       portid,\
-                       state,\
-                       reason,\
-                       reason_ttl,\
-                       name,\
-                       banner))       
-con.commit()
-
-## Add services now
-for svc in lHandler.sList:
-    db.execute('INSERT INTO\
-                    `svc_list`\
-                VALUES(?,\
-                        ?,\
-                        ?,\
-                        ?,\
-                        ?);',\
-                        (svc[0],\
-                        svc[1],\
-                        svc[2],\
-                        svc[3],\
-                        svc[4]))
-con.commit()
-
-## closeout
-con.close()
-
-## SELECT IP.addr AS 'addr', IP.protocol AS 'protocol', IP.portid AS 'port', IP.`state` AS 'state', IP.reason AS 'reason', IP.name AS 'name', IP.banner AS 'banner', SL.name AS 'service', SL.freq AS 'freq', SL.cmt AS 'comment' FROM ip_list IP INNER JOIN svc_list SL ON IP.portid = SL.port WHERE IP.protocol = SL.proto;
+    ## Generate stats and closeout
+    stats = stats_handler.Stats(db)
+    stats.by_addr()
+    stats.by_port()
+    stats.by_svc()
+    con.commit()
+    con.close()

@@ -1,5 +1,4 @@
 import re
-import os
 
 class List(object):
     """Handle any port list you want to throw at it"""
@@ -11,10 +10,6 @@ class List(object):
             self.lType = 'nmap'
         else:
             self.lType = None
-        try:
-            os.remove('masscan.sqlite')
-        except:
-            pass
 
 
     def list_pick(self):
