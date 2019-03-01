@@ -44,7 +44,6 @@ if __name__ == '__main__':
     con = lite.connect(sqlFile)
     con.text_factory = str
     db = con.cursor()
-    con.commit()
 
     ## Be friendly to GUI SQL visualization
     db.execute("""CREATE TABLE `_` (`_` INTEGER)""")
@@ -63,5 +62,8 @@ if __name__ == '__main__':
     stats.by_addr()
     stats.by_port()
     stats.by_svc()
+    addrStats = stats.addrStats()
+    portStats = stats.portStats()
+    svcStats = stats.svcStats()
     con.commit()
     con.close()

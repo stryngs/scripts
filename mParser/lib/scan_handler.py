@@ -4,7 +4,10 @@ class Scan(object):
     def __init__(self, con, db, lHandler, root):
         ## Notate the data for the individual hosts
         hostList = root.findall('host')
+        count = 0
         for i in hostList:
+            #print(count)
+            count += 1
             endtime = i.attrib.get('endtime')
             eList = i.iter()
             eDict = {}
@@ -47,7 +50,6 @@ class Scan(object):
                             reason_ttl,\
                             name,\
                             banner))       
-        con.commit()
 
         ## Add services now
         for svc in lHandler.sList:
@@ -63,4 +65,3 @@ class Scan(object):
                                 svc[2],\
                                 svc[3],\
                                 svc[4]))
-        con.commit()
