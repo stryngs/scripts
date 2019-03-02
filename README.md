@@ -27,11 +27,6 @@
 * qtip
   * Parse the database from qti and do something with it...
 
-## mParser
-* A sqlite3 parser for massscan XML results
-  * Now ties in common service to port commonalities
-  * Preparations underway to move this to it's own repository, growing nicely as a script
-
 ## pmkid2hashcat
 * Weaponizing the PMKID attack as demonstrated by atom
 
