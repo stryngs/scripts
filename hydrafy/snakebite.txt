@@ -1,0 +1,21 @@
+:
+:3450
+:498
+(AA Admin number):4x98
+(AA Admin number):4x99
+:admin
+admin:
+:Admin
+Admin:
+admin:admin
+Administrator:admin
+admin:password
+blank:admin
+comcast:1234
+:epicrouter
+http://192.168.1.245:Admin
+http://192.168.1.246:
+l1_admin:
+root:orion99
+(username):3+(extension)
+user:tivonpw

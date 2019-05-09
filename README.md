@@ -1,6 +1,3 @@
-## arp-em
-* Arpspoofing via scapy
-
 ## CookieJack.sh
 * Loop webpages to infinity and beyond using a simple iframe
 
@@ -27,14 +24,8 @@
 * qtip
   * Parse the database from qti and do something with it...
 
-## pmkid2hashcat
-* Weaponizing the PMKID attack as demonstrated by atom
-
 ## pyWhois
 * An interesting take on using whois type queries
-
-## quickset
-* A quick way to implement MITM style attacks for wired or wireless scenarios
 
 ## sotf
 * Secrecy on the fly
@@ -55,10 +46,3 @@
 
 ### obfume
 * Create an obfuscated payload
-
-## surfpwn.sh
-* Motorola SBG6580 bruteforce password decoder
-
-## wigleEarth
-* Plot out wifi accesspoints using the wigle sqlite database
-
