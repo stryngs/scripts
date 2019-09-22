@@ -27,10 +27,6 @@
 ## pyWhois
 * An interesting take on using whois type queries
 
-## sotf
-* Secrecy on the fly
-* A very high level usage of crypto implemented for shell or IRC based chat.
-
 ## stopwatch.py
 * Useful time delta stopwatch style module for python.
 
