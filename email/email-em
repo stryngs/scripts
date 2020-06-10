@@ -33,4 +33,4 @@ msg['To'] = ", ".join(recipients)
 if rName:
         msg['reply-to'] = rName
 s.sendmail(sender, recipients, msg.as_string())
-
+s.quit()
