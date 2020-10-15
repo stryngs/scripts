@@ -1,6 +1,3 @@
-## CookieJack.sh
-* Loop webpages to infinity and beyond using a simple iframe
-
 ## firewall
 * Useful scripts for firewalls
 
