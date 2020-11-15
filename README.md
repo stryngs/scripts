@@ -1,3 +1,9 @@
+## activeStats
+* Pull down user and node information from Active Directory, then SQL it for statistics
+
+## DNS
+* Useful ways of querying DNS
+
 ## firewall
 * Useful scripts for firewalls
 
