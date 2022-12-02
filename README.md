@@ -1,6 +1,3 @@
-## activeStats
-* Pull down user and node information from Active Directory, then SQL it for statistics
-
 ## DNS
 * Useful ways of querying DNS
 
@@ -16,10 +13,6 @@
 
 ### mx-rip
 * Rip MX record for a given set of email addresses and do something with it...
-
-## hydrafy
-* A way to automatically interact with hydra.
-* Contains comprehensive list of default usernames and passwords
 
 ## iqt
 * qti
