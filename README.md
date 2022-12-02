@@ -20,9 +20,6 @@
 * qtip
   * Parse the database from qti and do something with it...
 
-## pyWhois
-* An interesting take on using whois type queries
-
 ## stopwatch.py
 * Useful time delta stopwatch style module for python.
 
